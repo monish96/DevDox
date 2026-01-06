@@ -1,7 +1,18 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
+import { useLocation } from 'react-router-dom'
 import { copyToClipboard } from '../lib/clipboard'
 
 export function ToolsPage() {
+  const location = useLocation()
+
+  useEffect(() => {
+    const hash = (location.hash || '').replace('#', '')
+    if (!hash) return
+    const el = document.getElementById(hash)
+    if (!el) return
+    el.scrollIntoView({ behavior: 'smooth', block: 'start' })
+  }, [location.hash])
+
   return (
     <div className="container col">
       <div className="grid2">
@@ -44,7 +55,7 @@ function Base64Tool() {
   }
 
   return (
-    <div className="panel">
+    <div className="panel" id="base64">
       <div className="panelHeader">
         <div style={{ fontWeight: 650 }}>Base64</div>
         <span className="pill">encode/decode</span>
@@ -95,7 +106,7 @@ function JsonTool() {
   }
 
   return (
-    <div className="panel">
+    <div className="panel" id="json">
       <div className="panelHeader">
         <div style={{ fontWeight: 650 }}>JSON</div>
         <span className="pill">format/minify</span>
@@ -131,7 +142,7 @@ function UuidTool() {
   }
 
   return (
-    <div className="panel">
+    <div className="panel" id="uuid">
       <div className="panelHeader">
         <div style={{ fontWeight: 650 }}>UUID</div>
         <span className="pill">v4</span>
@@ -156,7 +167,7 @@ function UrlTool() {
   const [out, setOut] = useState('')
 
   return (
-    <div className="panel">
+    <div className="panel" id="url">
       <div className="panelHeader">
         <div style={{ fontWeight: 650 }}>URL</div>
         <span className="pill">encode/decode</span>
@@ -204,7 +215,7 @@ function Sha256Tool() {
   }
 
   return (
-    <div className="panel">
+    <div className="panel" id="sha256">
       <div className="panelHeader">
         <div style={{ fontWeight: 650 }}>SHA-256</div>
         <span className="pill">{canCrypto ? 'webcrypto' : 'unsupported'}</span>

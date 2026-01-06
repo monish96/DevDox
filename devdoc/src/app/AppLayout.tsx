@@ -297,9 +297,10 @@ export function AppLayout() {
       if (!q || s < 999) add({ id: `voice:${v.id}`, kind: 'voice', title: v.title, subtitle: 'Voice Docs', to: `/voice?voiceId=${encodeURIComponent(v.id)}` })
     }
 
-    // Diagrams
+    // Diagrams (canvas only)
     for (const d of diagrams) {
       if (d.archivedAt) continue
+      if (d.kind !== 'canvas') continue
       const hay = `${d.title}`
       const s = q ? matchScore(hay) : 999
       if (!q || s < 999) add({ id: `diagram:${d.id}`, kind: 'diagram', title: d.title, subtitle: 'Diagrams', to: `/diagrams?diagramId=${encodeURIComponent(d.id)}` })
