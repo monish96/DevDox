@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { IconButton } from '../components/IconButton'
 import { IconTrash } from '../components/icons'
@@ -36,6 +37,7 @@ function getSpeechRecognitionCtor(): SpeechRecognitionCtor | null {
 }
 
 export function VoiceDocsPage() {
+  const [searchParams] = useSearchParams()
   const saved = useAppState((s) => s.voiceDocs)
   const [title, setTitle] = useState('Voice Doc')
   const [text, setText] = useState('')
@@ -57,6 +59,16 @@ export function VoiceDocsPage() {
       }
     }
   }, [])
+
+  useEffect(() => {
+    const id = searchParams.get('voiceId')
+    if (!id) return
+    const d = saved.find((x) => x.id === id)
+    if (!d) return
+    setTitle(d.title)
+    setText(d.rawText)
+    setSummary(d.summary)
+  }, [searchParams, saved])
 
   function start() {
     setError(null)

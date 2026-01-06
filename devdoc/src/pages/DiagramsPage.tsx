@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Excalidraw, exportToSvg } from '@excalidraw/excalidraw'
 import '@excalidraw/excalidraw/index.css'
+import { useSearchParams } from 'react-router-dom'
 import { IconButton } from '../components/IconButton'
 import { IconList, IconPlus, IconSave, IconTrash, IconX } from '../components/icons'
 import { newId } from '../lib/id'
@@ -8,6 +9,7 @@ import { setState, useAppState } from '../lib/storage'
 import type { Diagram } from '../lib/types'
 
 export function DiagramsPage() {
+  const [searchParams] = useSearchParams()
   const diagrams = useAppState((s) => s.diagrams)
   const canvasDiagrams = useMemo(
     () => diagrams.filter((d) => d.kind === 'canvas') as Extract<Diagram, { kind: 'canvas' }>[],
@@ -25,6 +27,12 @@ export function DiagramsPage() {
   const [dirty, setDirty] = useState(false)
   const sceneRef = useRef<any>(null)
   const [libraryOpen, setLibraryOpen] = useState(false)
+
+  useEffect(() => {
+    const id = searchParams.get('diagramId')
+    if (!id) return
+    if (canvasDiagrams.some((d) => d.id === id)) setDiagramId(id)
+  }, [searchParams, canvasDiagrams])
 
   useEffect(() => {
     if (!selected) return

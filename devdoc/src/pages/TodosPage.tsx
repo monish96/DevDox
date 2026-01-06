@@ -1,4 +1,4 @@
-import { type CSSProperties, useMemo, useState } from 'react'
+import { type CSSProperties, useEffect, useMemo, useRef, useState } from 'react'
 import {
   DndContext,
   DragOverlay,
@@ -11,6 +11,7 @@ import {
 } from '@dnd-kit/core'
 import { SortableContext, sortableKeyboardCoordinates, useSortable, verticalListSortingStrategy } from '@dnd-kit/sortable'
 import { CSS } from '@dnd-kit/utilities'
+import { useSearchParams } from 'react-router-dom'
 import { IconButton } from '../components/IconButton'
 import { TodoCreateDrawer, type TodoDraft } from '../components/TodoCreateDrawer'
 import { IconEdit, IconPlus, IconSave, IconTrash, IconX } from '../components/icons'
@@ -19,6 +20,7 @@ import { setState, useAppState } from '../lib/storage'
 import type { Todo, TodoColumn } from '../lib/types'
 
 export function TodosPage() {
+  const [searchParams] = useSearchParams()
   const todos = useAppState((s) => s.todos)
   const columns = useAppState((s) => s.todoColumns)
   const [activeId, setActiveId] = useState<string | null>(null)
@@ -123,6 +125,17 @@ export function TodosPage() {
     setEditTags((todo.tags ?? []).join(', '))
     setEditPriority(todo.priority ?? 'medium')
   }
+
+  const lastAutoOpenedRef = useRef<string | null>(null)
+  useEffect(() => {
+    const id = searchParams.get('todoId')
+    if (!id) return
+    if (lastAutoOpenedRef.current === id) return
+    const t = todos.find((x) => x.id === id)
+    if (!t) return
+    lastAutoOpenedRef.current = id
+    openEdit(t)
+  }, [searchParams, todos])
 
   function saveEdit() {
     if (!editId) return

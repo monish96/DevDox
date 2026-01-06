@@ -14,6 +14,7 @@ export function SettingsPage() {
   const backupIntervalHours = useAppState((s) => s.backupIntervalHours)
   const backupLastAt = useAppState((s) => s.backupLastAt)
   const pomodoroFocusMinutes = useAppState((s) => s.pomodoroFocusMinutes)
+  const searchShortcutEnabled = useAppState((s) => s.searchShortcutEnabled)
 
   const [newColTitle, setNewColTitle] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -220,6 +221,20 @@ export function SettingsPage() {
                 </IconButton>
               </div>
             </div>
+          </div>
+
+          <div className="sideCard">
+            <div className="sideTitle">Search</div>
+            <div className="sideCaption">Global search command palette. Shortcut: <strong>Ctrl/Cmd + K</strong>.</div>
+
+            <label className="row" style={{ gap: 10, alignItems: 'center' }}>
+              <input
+                type="checkbox"
+                checked={searchShortcutEnabled ?? true}
+                onChange={(e) => setState((prev) => ({ ...prev, searchShortcutEnabled: e.target.checked }))}
+              />
+              <span style={{ fontWeight: 650 }}>Enable Ctrl/Cmd+K shortcut</span>
+            </label>
           </div>
 
           <div className="sideCard">

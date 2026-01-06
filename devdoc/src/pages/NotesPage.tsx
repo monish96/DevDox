@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { CodeBlock } from '../components/CodeBlock'
 import { IconButton } from '../components/IconButton'
 import {
@@ -22,6 +23,7 @@ import { setState, useAppState } from '../lib/storage'
 import type { Note, Snippet } from '../lib/types'
 
 export function NotesPage() {
+  const [searchParams] = useSearchParams()
   const notes = useAppState((s) => s.notes)
   const snippets = useAppState((s) => s.snippets)
 
@@ -34,6 +36,24 @@ export function NotesPage() {
     () => snippets.find((s) => s.id === snippetId) ?? null,
     [snippets, snippetId],
   )
+
+  useEffect(() => {
+    const nid = searchParams.get('noteId')
+    const sid = searchParams.get('snippetId')
+    if (sid) {
+      if (snippets.some((s) => s.id === sid)) {
+        setActive('snippets')
+        setSnippetId(sid)
+      }
+      return
+    }
+    if (nid) {
+      if (notes.some((n) => n.id === nid)) {
+        setActive('notes')
+        setNoteId(nid)
+      }
+    }
+  }, [searchParams, notes, snippets])
 
   const treeRef = useRef<HTMLDivElement | null>(null)
   const forceEditNextNoteSelectionRef = useRef(false)

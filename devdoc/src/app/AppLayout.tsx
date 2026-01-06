@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react'
 import { NavLink, Outlet, useLocation, useNavigate } from 'react-router-dom'
 import { IconButton } from '../components/IconButton'
+import { GlobalSearchDialog, type SearchResult } from '../components/GlobalSearchDialog'
 import { TodoCreateDrawer, type TodoDraft } from '../components/TodoCreateDrawer'
 import {
   IconChevronLeft,
@@ -12,6 +13,7 @@ import {
   IconMoon,
   IconNote,
   IconPlus,
+  IconSearch,
   IconSettings,
   IconSun,
   IconTodo,
@@ -52,6 +54,12 @@ export function AppLayout() {
   const backupEnabled = useAppState((s) => s.backupEnabled)
   const backupIntervalHours = useAppState((s) => s.backupIntervalHours)
   const backupLastAt = useAppState((s) => s.backupLastAt)
+  const searchShortcutEnabled = useAppState((s) => s.searchShortcutEnabled)
+  const todos = useAppState((s) => s.todos)
+  const notes = useAppState((s) => s.notes)
+  const snippets = useAppState((s) => s.snippets)
+  const voiceDocs = useAppState((s) => s.voiceDocs)
+  const diagrams = useAppState((s) => s.diagrams)
 
   const shortcutHint = useMemo(() => (isMac() ? '⌘' : 'Ctrl'), [])
   const [theme, setTheme] = useState(() => document.documentElement.dataset.theme === 'light' ? 'light' : 'dark')
@@ -80,6 +88,9 @@ export function AppLayout() {
 
   const sidebarImportRef = useRef<HTMLInputElement | null>(null)
   const welcomeImportRef = useRef<HTMLInputElement | null>(null)
+
+  const [searchOpen, setSearchOpen] = useState(false)
+  const [searchQuery, setSearchQuery] = useState('')
 
   useEffect(() => {
     if (userName && userName.trim()) return
@@ -150,6 +161,23 @@ export function AppLayout() {
     function onKeyDown(e: KeyboardEvent) {
       const isCmdOrCtrl = isMac() ? e.metaKey : e.ctrlKey
       if (!isCmdOrCtrl) return
+      if (!searchShortcutEnabled) return
+      if (e.shiftKey) return
+      if (e.altKey) return
+      if (isEditableTarget(e.target)) return
+      const isK = e.code === 'KeyK' || (e.key || '').toLowerCase() === 'k'
+      if (!isK) return
+      e.preventDefault()
+      setSearchOpen(true)
+    }
+    window.addEventListener('keydown', onKeyDown)
+    return () => window.removeEventListener('keydown', onKeyDown)
+  }, [searchShortcutEnabled])
+
+  useEffect(() => {
+    function onKeyDown(e: KeyboardEvent) {
+      const isCmdOrCtrl = isMac() ? e.metaKey : e.ctrlKey
+      if (!isCmdOrCtrl) return
       // Quick add todo: Cmd/Ctrl + Alt + T (and also Cmd/Ctrl + Alt + Shift + T)
       if (!e.altKey) return
       if (isEditableTarget(e.target)) return
@@ -202,6 +230,89 @@ export function AppLayout() {
     setQuickTodoOpen(false)
     navigate('/todos')
   }
+
+  const searchResults: SearchResult[] = useMemo(() => {
+    const q = searchQuery.trim().toLowerCase()
+    const res: SearchResult[] = []
+
+    const add = (r: SearchResult) => res.push(r)
+    const matchScore = (text: string) => {
+      const t = text.toLowerCase()
+      if (!q) return 999
+      if (t === q) return 0
+      if (t.startsWith(q)) return 1
+      const idx = t.indexOf(q)
+      if (idx >= 0) return 2 + Math.min(30, idx)
+      return 999
+    }
+
+    // Pages
+    for (const n of navItems) {
+      const s = q ? matchScore(n.label) : 999
+      if (!q || s < 999) add({ id: `page:${n.to}`, kind: 'page', title: n.label, subtitle: n.to, to: n.to })
+    }
+
+    // Tools anchors
+    const tools: Array<{ id: string; title: string; hash: string }> = [
+      { id: 'tool:base64', title: 'Base64', hash: '#base64' },
+      { id: 'tool:json', title: 'JSON Formatter', hash: '#json' },
+      { id: 'tool:uuid', title: 'UUID', hash: '#uuid' },
+      { id: 'tool:url', title: 'URL Encode/Decode', hash: '#url' },
+      { id: 'tool:sha', title: 'SHA-256', hash: '#sha256' },
+    ]
+    for (const t of tools) {
+      const s = q ? matchScore(t.title) : 999
+      if (!q || s < 999) add({ id: t.id, kind: 'tool', title: t.title, subtitle: 'Dev Tools', to: `/tools${t.hash}` })
+    }
+
+    // Todos
+    for (const t of todos) {
+      if (t.archivedAt) continue
+      const hay = `${t.title} ${(t.description ?? '')} ${(t.tags ?? []).join(' ')}`
+      const s = q ? matchScore(hay) : 999
+      if (!q || s < 999) add({ id: `todo:${t.id}`, kind: 'todo', title: t.title, subtitle: t.dueDate ? `Due ${t.dueDate}` : 'No due date', to: `/todos?todoId=${encodeURIComponent(t.id)}` })
+    }
+
+    // Notes
+    for (const n of notes) {
+      if (n.archivedAt) continue
+      const hay = `${n.title} ${n.body ?? ''}`
+      const s = q ? matchScore(hay) : 999
+      if (!q || s < 999) add({ id: `note:${n.id}`, kind: 'note', title: n.title, subtitle: 'Notes', to: `/notes?noteId=${encodeURIComponent(n.id)}` })
+    }
+
+    // Snippets
+    for (const s0 of snippets) {
+      if (s0.archivedAt) continue
+      const hay = `${s0.title} ${s0.language} ${s0.tags?.join(' ') ?? ''} ${s0.code ?? ''}`
+      const s = q ? matchScore(hay) : 999
+      if (!q || s < 999) add({ id: `snippet:${s0.id}`, kind: 'snippet', title: s0.title, subtitle: s0.language, to: `/notes?snippetId=${encodeURIComponent(s0.id)}` })
+    }
+
+    // Voice docs
+    for (const v of voiceDocs) {
+      if (v.archivedAt) continue
+      const hay = `${v.title} ${v.summary ?? ''} ${v.rawText ?? ''}`
+      const s = q ? matchScore(hay) : 999
+      if (!q || s < 999) add({ id: `voice:${v.id}`, kind: 'voice', title: v.title, subtitle: 'Voice Docs', to: `/voice?voiceId=${encodeURIComponent(v.id)}` })
+    }
+
+    // Diagrams
+    for (const d of diagrams) {
+      if (d.archivedAt) continue
+      const hay = `${d.title}`
+      const s = q ? matchScore(hay) : 999
+      if (!q || s < 999) add({ id: `diagram:${d.id}`, kind: 'diagram', title: d.title, subtitle: 'Diagrams', to: `/diagrams?diagramId=${encodeURIComponent(d.id)}` })
+    }
+
+    if (!q) return res.slice(0, 25)
+    // Basic ranking by best score (computed against title-ish strings)
+    return res
+      .map((r) => ({ r, s: matchScore(`${r.title} ${r.subtitle ?? ''} ${r.kind}`) }))
+      .sort((a, b) => a.s - b.s)
+      .map((x) => x.r)
+      .slice(0, 25)
+  }, [diagrams, notes, searchQuery, snippets, todos, voiceDocs])
 
   return (
     <div className={`appShell ${collapsed ? 'appShellCollapsed' : ''}`.trim()}>
@@ -309,6 +420,9 @@ export function AppLayout() {
         <div className="topbar">
           <div className="topbarTitle">{titleForPath(location.pathname)}</div>
           <div className="row" style={{ gap: 8 }}>
+            <IconButton label="Search (Ctrl/Cmd+K)" onClick={() => setSearchOpen(true)}>
+              <IconSearch />
+            </IconButton>
             <IconButton label="Quick add todo (Ctrl/Cmd+Alt+T)" onClick={() => setQuickTodoOpen(true)}>
               <IconPlus />
             </IconButton>
@@ -335,6 +449,19 @@ export function AppLayout() {
         onChange={(patch) => setQuickDraft((d) => ({ ...d, ...patch }))}
         onClose={() => setQuickTodoOpen(false)}
         onSubmit={saveQuickTodo}
+      />
+
+      <GlobalSearchDialog
+        open={searchOpen}
+        query={searchQuery}
+        results={searchResults}
+        onQueryChange={setSearchQuery}
+        onClose={() => setSearchOpen(false)}
+        onPick={(r) => {
+          setSearchOpen(false)
+          setSearchQuery('')
+          navigate(r.to)
+        }}
       />
 
       {nameOpen ? (
