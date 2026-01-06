@@ -1,0 +1,74 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1200 675">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1020"/>
+      <stop offset="1" stop-color="#071a2a"/>
+    </linearGradient>
+    <linearGradient id="acc" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#74c7ff"/>
+      <stop offset="0.55" stop-color="#45d483"/>
+      <stop offset="1" stop-color="#ffcc66"/>
+    </linearGradient>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="14" stdDeviation="14" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="675" fill="url(#bg)"/>
+  <g filter="url(#shadow)">
+    <rect x="55" y="55" width="1090" height="565" rx="22" fill="rgba(255,255,255,0.06)" stroke="rgba(255,255,255,0.12)"/>
+  </g>
+
+  <text x="95" y="120" fill="#fff" opacity="0.92" font-size="18" font-weight="800" font-family="ui-sans-serif, system-ui">Diagrams</text>
+  <text x="95" y="145" fill="#fff" opacity="0.62" font-size="12" font-family="ui-sans-serif, system-ui">Draw interactively • Save • Thumbnail library</text>
+
+  <!-- Left create -->
+  <rect x="95" y="180" width="220" height="420" rx="18" fill="rgba(0,0,0,0.18)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="120" y="215" fill="#fff" opacity="0.86" font-size="13" font-weight="700" font-family="ui-sans-serif, system-ui">Create</text>
+  <rect x="120" y="235" width="170" height="38" rx="14" fill="rgba(116,199,255,0.14)" stroke="rgba(116,199,255,0.30)"/>
+  <text x="140" y="260" fill="#fff" opacity="0.92" font-size="13" font-family="ui-sans-serif, system-ui">New diagram</text>
+  <circle cx="268" cy="254" r="10" fill="rgba(255,255,255,0.10)" stroke="rgba(255,255,255,0.18)"/>
+  <path d="M268 248v12M262 254h12" stroke="url(#acc)" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Middle library -->
+  <rect x="335" y="180" width="360" height="420" rx="18" fill="rgba(0,0,0,0.18)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="360" y="215" fill="#fff" opacity="0.86" font-size="13" font-weight="700" font-family="ui-sans-serif, system-ui">Library</text>
+
+  <g transform="translate(360,235)">
+    <!-- item 1 -->
+    <rect x="0" y="0" width="315" height="82" rx="16" fill="rgba(116,199,255,0.12)" stroke="rgba(116,199,255,0.30)"/>
+    <rect x="12" y="14" width="76" height="54" rx="12" fill="rgba(0,0,0,0.20)" stroke="rgba(255,255,255,0.12)"/>
+    <path d="M22 56h56" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round"/>
+    <rect x="104" y="18" width="160" height="10" rx="5" fill="rgba(255,255,255,0.65)"/>
+    <rect x="104" y="36" width="120" height="8" rx="4" fill="rgba(255,255,255,0.30)"/>
+    <circle cx="292" cy="41" r="10" fill="rgba(255,107,107,0.10)" stroke="rgba(255,107,107,0.35)"/>
+    <!-- item 2 -->
+    <rect x="0" y="96" width="315" height="82" rx="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.10)"/>
+    <rect x="12" y="110" width="76" height="54" rx="12" fill="rgba(0,0,0,0.20)" stroke="rgba(255,255,255,0.12)"/>
+    <path d="M28 120h44M28 134h28M28 148h36" stroke="rgba(255,255,255,0.55)" stroke-width="2" stroke-linecap="round"/>
+    <rect x="104" y="114" width="140" height="10" rx="5" fill="rgba(255,255,255,0.55)"/>
+    <rect x="104" y="132" width="110" height="8" rx="4" fill="rgba(255,255,255,0.28)"/>
+    <circle cx="292" cy="137" r="10" fill="rgba(255,107,107,0.10)" stroke="rgba(255,107,107,0.35)"/>
+  </g>
+
+  <!-- Right canvas -->
+  <rect x="715" y="180" width="420" height="420" rx="18" fill="rgba(0,0,0,0.18)" stroke="rgba(255,255,255,0.10)"/>
+  <text x="740" y="215" fill="#fff" opacity="0.86" font-size="13" font-weight="700" font-family="ui-sans-serif, system-ui">Canvas</text>
+  <rect x="740" y="235" width="360" height="330" rx="16" fill="rgba(255,255,255,0.04)" stroke="rgba(255,255,255,0.10)"/>
+
+  <!-- A small "UML-ish" drawing -->
+  <rect x="770" y="270" width="150" height="90" rx="12" fill="rgba(116,199,255,0.10)" stroke="rgba(116,199,255,0.30)"/>
+  <text x="790" y="300" fill="#fff" opacity="0.90" font-size="12" font-weight="700" font-family="ui-sans-serif, system-ui">Service</text>
+  <path d="M770 312h150" stroke="rgba(255,255,255,0.15)"/>
+  <text x="790" y="338" fill="rgba(255,255,255,0.70)" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas">+ fetch()</text>
+
+  <rect x="930" y="330" width="150" height="90" rx="12" fill="rgba(69,212,131,0.10)" stroke="rgba(69,212,131,0.28)"/>
+  <text x="950" y="360" fill="#fff" opacity="0.90" font-size="12" font-weight="700" font-family="ui-sans-serif, system-ui">Client</text>
+  <path d="M930 372h150" stroke="rgba(255,255,255,0.15)"/>
+  <text x="950" y="398" fill="rgba(255,255,255,0.70)" font-size="11" font-family="ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas">+ request()</text>
+
+  <path d="M920 320 C 945 320, 965 320, 985 330" fill="none" stroke="url(#acc)" stroke-width="3" stroke-linecap="round"/>
+  <path d="M986 330 l-10 1 l 6 -8" fill="url(#acc)"/>
+</svg>
+
+

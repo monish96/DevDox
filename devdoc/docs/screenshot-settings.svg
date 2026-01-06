@@ -1,0 +1,90 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1200" height="720" viewBox="0 0 1200 720">
+  <defs>
+    <linearGradient id="bg" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0" stop-color="#0b1020"/>
+      <stop offset="1" stop-color="#070a14"/>
+    </linearGradient>
+    <linearGradient id="glass" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#ffffff" stop-opacity="0.08"/>
+      <stop offset="1" stop-color="#ffffff" stop-opacity="0.03"/>
+    </linearGradient>
+    <filter id="blur" x="-20%" y="-20%" width="140%" height="140%">
+      <feGaussianBlur stdDeviation="18"/>
+    </filter>
+    <filter id="shadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="16" stdDeviation="18" flood-color="#000" flood-opacity="0.35"/>
+    </filter>
+  </defs>
+
+  <rect width="1200" height="720" fill="url(#bg)"/>
+  <circle cx="280" cy="540" r="170" fill="#2a6cff" opacity="0.22" filter="url(#blur)"/>
+  <circle cx="980" cy="160" r="160" fill="#74c7ff" opacity="0.18" filter="url(#blur)"/>
+
+  <!-- App shell -->
+  <rect x="70" y="70" width="1060" height="580" rx="22" fill="url(#glass)" stroke="#ffffff" stroke-opacity="0.12"/>
+  <!-- Sidebar -->
+  <rect x="70" y="70" width="230" height="580" rx="22" fill="#0c1224" stroke="#ffffff" stroke-opacity="0.10"/>
+  <text x="105" y="120" fill="#e7ecff" font-family="Inter, system-ui, -apple-system" font-size="26" font-weight="800">DevDox</text>
+  <text x="105" y="150" fill="#9aa6c7" font-family="Inter, system-ui, -apple-system" font-size="12">Local-first dev cockpit</text>
+  <g fill="#9aa6c7" font-family="Inter, system-ui, -apple-system" font-size="13" font-weight="600">
+    <text x="105" y="220">Dashboard</text>
+    <text x="105" y="260">Todos</text>
+    <text x="105" y="300">Notes</text>
+    <text x="105" y="340">Diagrams</text>
+    <text x="105" y="380">Voice</text>
+    <text x="105" y="420">Tools</text>
+    <text x="105" y="460" fill="#e7ecff">Settings</text>
+  </g>
+
+  <!-- Content -->
+  <rect x="320" y="70" width="810" height="580" rx="22" fill="#0b0f1c" stroke="#ffffff" stroke-opacity="0.10"/>
+  <text x="350" y="120" fill="#e7ecff" font-family="Inter, system-ui, -apple-system" font-size="22" font-weight="800">Settings</text>
+  <text x="350" y="145" fill="#9aa6c7" font-family="Inter, system-ui, -apple-system" font-size="12">Manage columns • local preferences • safe defaults</text>
+
+  <!-- Card -->
+  <g filter="url(#shadow)">
+    <rect x="350" y="175" width="750" height="470" rx="18" fill="#0e1426" stroke="#ffffff" stroke-opacity="0.10"/>
+  </g>
+  <text x="380" y="215" fill="#e7ecff" font-family="Inter, system-ui" font-size="16" font-weight="800">Kanban columns</text>
+  <text x="380" y="240" fill="#9aa6c7" font-family="Inter, system-ui" font-size="12">
+    Built-in columns can’t be deleted. Custom columns can be renamed or removed.
+  </text>
+
+  <!-- Add row -->
+  <rect x="380" y="265" width="540" height="44" rx="14" fill="#0b0f1c" stroke="#ffffff" stroke-opacity="0.12"/>
+  <text x="402" y="293" fill="#5f6b8a" font-family="Inter, system-ui" font-size="13" font-weight="650">New column name</text>
+  <rect x="940" y="265" width="44" height="44" rx="16" fill="#10243a" stroke="#74c7ff" stroke-opacity="0.55"/>
+  <path d="M962 278v18M953 287h18" stroke="#e7ecff" stroke-width="2" stroke-linecap="round"/>
+
+  <!-- Rows -->
+  <g font-family="Inter, system-ui">
+    <!-- system columns -->
+    <rect x="380" y="330" width="720" height="54" rx="16" fill="#0b0f1c" stroke="#ffffff" stroke-opacity="0.10"/>
+    <text x="402" y="363" fill="#e7ecff" font-size="14" font-weight="750">Todo</text>
+    <rect x="470" y="345" width="58" height="20" rx="999" fill="#101a2f" stroke="#ffffff" stroke-opacity="0.12"/>
+    <text x="485" y="360" fill="#9aa6c7" font-size="10" font-weight="700">system</text>
+    <rect x="980" y="340" width="40" height="34" rx="12" fill="#111a2f" stroke="#ffffff" stroke-opacity="0.10"/>
+    <rect x="1030" y="340" width="40" height="34" rx="12" fill="#111a2f" stroke="#ffffff" stroke-opacity="0.06"/>
+    <path d="M1000 350l10 10M1010 350l-10 10" stroke="#9aa6c7" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+
+    <rect x="380" y="392" width="720" height="54" rx="16" fill="#0b0f1c" stroke="#ffffff" stroke-opacity="0.10"/>
+    <text x="402" y="425" fill="#e7ecff" font-size="14" font-weight="750">Doing</text>
+    <rect x="476" y="407" width="58" height="20" rx="999" fill="#101a2f" stroke="#ffffff" stroke-opacity="0.12"/>
+    <text x="491" y="422" fill="#9aa6c7" font-size="10" font-weight="700">system</text>
+    <rect x="980" y="402" width="40" height="34" rx="12" fill="#111a2f" stroke="#ffffff" stroke-opacity="0.10"/>
+    <rect x="1030" y="402" width="40" height="34" rx="12" fill="#111a2f" stroke="#ffffff" stroke-opacity="0.06"/>
+    <path d="M1000 412l10 10M1010 412l-10 10" stroke="#9aa6c7" stroke-width="2" stroke-linecap="round" opacity="0.6"/>
+
+    <!-- custom column -->
+    <rect x="380" y="470" width="720" height="54" rx="16" fill="#0b0f1c" stroke="#74c7ff" stroke-opacity="0.20"/>
+    <text x="402" y="503" fill="#e7ecff" font-size="14" font-weight="750">Blocked</text>
+    <rect x="490" y="485" width="58" height="20" rx="999" fill="#1a1933" stroke="#ffffff" stroke-opacity="0.12"/>
+    <text x="505" y="500" fill="#9aa6c7" font-size="10" font-weight="700">custom</text>
+    <rect x="980" y="480" width="40" height="34" rx="12" fill="#111a2f" stroke="#ffffff" stroke-opacity="0.10"/>
+    <path d="M993 502l10-10m0 0l10 10m-10-10v18" stroke="#e7ecff" stroke-width="2" stroke-linecap="round" opacity="0.8"/>
+    <rect x="1030" y="480" width="40" height="34" rx="12" fill="#241316" stroke="#ff6b6b" stroke-opacity="0.35"/>
+    <path d="M1043 489h14M1046 489v-2a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M1046 489l1 18h8l1-18" stroke="#ffd6d6" stroke-width="2" stroke-linecap="round" opacity="0.9"/>
+  </g>
+</svg>
+
+
