@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import { IconButton } from '../components/IconButton'
 import { IconPause, IconPlay, IconX } from '../components/icons'
@@ -17,13 +17,18 @@ export function DashboardPage() {
   const [running, setRunning] = useState(false)
   const [endAt, setEndAt] = useState<number | null>(null)
   const [remainingMs, setRemainingMs] = useState<number>(focusMs)
+  const lastConfiguredMsRef = useRef<number>(focusMs)
 
   useEffect(() => {
-    // If user changes focus length, reset when not running.
-    if (running) return
-    setRemainingMs(focusMs)
-    setEndAt(null)
-  }, [focusMs, running])
+    // If user changes focus length, update the timer ONLY if it's not in progress.
+    // "Not in progress" = not running AND not paused (endAt === null) AND still at the previous default.
+    const prev = lastConfiguredMsRef.current
+    if (focusMs === prev) return
+    lastConfiguredMsRef.current = focusMs
+    if (!running && endAt === null && remainingMs === prev) {
+      setRemainingMs(focusMs)
+    }
+  }, [focusMs, running, endAt, remainingMs])
 
   useEffect(() => {
     if (!running || !endAt) return
@@ -105,6 +110,8 @@ export function DashboardPage() {
                       label="Pause"
                       kind="primary"
                       onClick={() => {
+                        // Freeze remaining time instead of resetting.
+                        if (endAt) setRemainingMs(Math.max(0, endAt - Date.now()))
                         setRunning(false)
                         setEndAt(null)
                       }}
