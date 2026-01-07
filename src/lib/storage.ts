@@ -16,6 +16,7 @@ function defaultState(): AppState {
   return {
     version: 1,
     userName: undefined,
+    securityBannerDismissed: false,
     backupEnabled: true,
     backupIntervalHours: 24,
     backupLastAt: undefined,
@@ -88,6 +89,7 @@ function normalizeState(raw: unknown): AppState {
   return {
     version: 1,
     userName: typeof (r as any).userName === 'string' ? (r as any).userName : undefined,
+    securityBannerDismissed: typeof (r as any).securityBannerDismissed === 'boolean' ? (r as any).securityBannerDismissed : false,
     backupEnabled: typeof (r as any).backupEnabled === 'boolean' ? (r as any).backupEnabled : true,
     backupIntervalHours: typeof (r as any).backupIntervalHours === 'number' ? (r as any).backupIntervalHours : 24,
     backupLastAt: typeof (r as any).backupLastAt === 'number' ? (r as any).backupLastAt : undefined,

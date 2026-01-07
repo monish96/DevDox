@@ -19,6 +19,7 @@ import {
   IconTodo,
   IconTool,
   IconUpload,
+  IconX,
 } from '../components/icons'
 import { newId } from '../lib/id'
 import { setState, useAppState } from '../lib/storage'
@@ -51,6 +52,7 @@ export function AppLayout() {
   const location = useLocation()
   const navigate = useNavigate()
   const userName = useAppState((s) => s.userName)
+  const securityBannerDismissed = useAppState((s) => s.securityBannerDismissed)
   const backupEnabled = useAppState((s) => s.backupEnabled)
   const backupIntervalHours = useAppState((s) => s.backupIntervalHours)
   const backupLastAt = useAppState((s) => s.backupLastAt)
@@ -323,7 +325,7 @@ export function AppLayout() {
             <div className="brandTitle">DevDox</div>
           </div>
           <div className={`brandTag ${collapsed ? 'hideWhenCollapsed' : ''}`.trim()}>
-            Your local-first dev cockpit — capture work, ship faster.
+            Your local-first dev cockpit — capture work, be productive.
           </div>
         </div>
 
@@ -418,9 +420,27 @@ export function AppLayout() {
       </aside>
 
       <main className="content">
-        <div className="topbar">
-          <div className="topbarTitle">{titleForPath(location.pathname)}</div>
-          <div className="row" style={{ gap: 8 }}>
+        <div className="topbar topbarStack">
+          {!securityBannerDismissed ? (
+            <div className="securityBanner" role="note" aria-label="Security notice">
+              <div className="row" style={{ gap: 10, minWidth: 0 }}>
+                <span className="pill pillWarn">Security</span>
+                <div className="securityBannerText">
+                  Don’t store personal passwords or secrets in DevDox. This app saves data locally in your browser.
+                </div>
+              </div>
+              <IconButton
+                label="Dismiss security notice"
+                onClick={() => setState((prev) => ({ ...prev, securityBannerDismissed: true }))}
+              >
+                <IconX />
+              </IconButton>
+            </div>
+          ) : null}
+
+          <div className="topbarRow">
+            <div className="topbarTitle">{titleForPath(location.pathname)}</div>
+            <div className="row" style={{ gap: 8 }}>
             <IconButton label="Search (Ctrl/Cmd+K)" onClick={() => setSearchOpen(true)}>
               <IconSearch />
             </IconButton>
@@ -438,6 +458,7 @@ export function AppLayout() {
               {theme === 'light' ? <IconMoon /> : <IconSun />}
             </IconButton>
             {userName ? <div className="kbdHint">Hi, <strong>{userName}</strong></div> : null}
+            </div>
           </div>
         </div>
         <Outlet />

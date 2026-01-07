@@ -1,6 +1,7 @@
 import { useMemo, useRef, useState } from 'react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { IconButton } from '../components/IconButton'
+import { PromptDialog } from '../components/PromptDialog'
 import { IconDownload, IconEdit, IconPlus, IconSave, IconTrash, IconUpload } from '../components/icons'
 import { newId } from '../lib/id'
 import { setState, useAppState } from '../lib/storage'
@@ -23,6 +24,8 @@ export function SettingsPage() {
   const [importing, setImporting] = useState(false)
   const [importError, setImportError] = useState<string | null>(null)
   const importRef = useRef<HTMLInputElement | null>(null)
+  const [backupIntervalOpen, setBackupIntervalOpen] = useState(false)
+  const [backupIntervalDraft, setBackupIntervalDraft] = useState('')
 
   const ordered = useMemo(() => columns.slice().sort((a, b) => a.order - b.order), [columns])
   const todoColumnId = useMemo(() => {
@@ -34,6 +37,22 @@ export function SettingsPage() {
     if (!deleteCol || !todoColumnId) return 0
     return todos.filter((t) => !t.archivedAt && (t.columnId ?? todoColumnId) === deleteCol.id).length
   }, [deleteCol, todoColumnId, todos])
+
+  const backupIntervalRounded = Math.round(Number(backupIntervalDraft))
+  const backupIntervalValid = Number.isFinite(backupIntervalRounded) && backupIntervalRounded > 0
+  const backupIntervalError =
+    backupIntervalDraft.trim().length === 0 ? 'Required' : backupIntervalValid ? undefined : 'Enter a number greater than 0'
+
+  function openBackupInterval() {
+    setBackupIntervalDraft(String(backupIntervalHours ?? 24))
+    setBackupIntervalOpen(true)
+  }
+
+  function saveBackupInterval() {
+    if (!backupIntervalValid) return
+    setState((prev) => ({ ...prev, backupIntervalHours: backupIntervalRounded }))
+    setBackupIntervalOpen(false)
+  }
 
   function addColumn() {
     const title = newColTitle.trim()
@@ -172,13 +191,7 @@ export function SettingsPage() {
               </div>
               <IconButton
                 label="Set backup interval (hours)"
-                onClick={() => {
-                  const next = window.prompt('Backup interval in hours', String(backupIntervalHours ?? 24))
-                  if (!next) return
-                  const n = Number(next)
-                  if (!Number.isFinite(n) || n <= 0) return
-                  setState((prev) => ({ ...prev, backupIntervalHours: Math.round(n) }))
-                }}
+                onClick={openBackupInterval}
               >
                 <IconEdit />
               </IconButton>
@@ -194,8 +207,7 @@ export function SettingsPage() {
                 Focus length: <strong>{pomodoroFocusMinutes ?? 30} min</strong>
               </div>
               <input
-                className="input"
-                type="number"
+                type="range"
                 min={5}
                 max={180}
                 step={5}
@@ -203,23 +215,11 @@ export function SettingsPage() {
                 onChange={(e) => {
                   const n = Number(e.target.value)
                   if (!Number.isFinite(n)) return
-                  const next = Math.max(5, Math.min(180, Math.round(n)))
-                  setState((prev) => ({ ...prev, pomodoroFocusMinutes: next }))
+                  setState((prev) => ({ ...prev, pomodoroFocusMinutes: n }))
                 }}
                 title="Pomodoro focus minutes"
-                style={{ maxWidth: 140 }}
+                style={{ flex: 1, minWidth: 240, maxWidth: 520 }}
               />
-              <div className="row" style={{ gap: 6 }}>
-                <IconButton label="Set 25 min" onClick={() => setState((p) => ({ ...p, pomodoroFocusMinutes: 25 }))}>
-                  <IconEdit />
-                </IconButton>
-                <IconButton label="Set 30 min" onClick={() => setState((p) => ({ ...p, pomodoroFocusMinutes: 30 }))}>
-                  <IconEdit />
-                </IconButton>
-                <IconButton label="Set 45 min" onClick={() => setState((p) => ({ ...p, pomodoroFocusMinutes: 45 }))}>
-                  <IconEdit />
-                </IconButton>
-              </div>
             </div>
           </div>
 
@@ -329,6 +329,22 @@ export function SettingsPage() {
         cancelLabel="Cancel"
         onCancel={() => setDeleteId(null)}
         onConfirm={confirmDeleteColumn}
+      />
+
+      <PromptDialog
+        open={backupIntervalOpen}
+        title="Backup interval"
+        message="Set how often DevDox should mark a backup as due (in hours)."
+        inputLabel="Hours"
+        value={backupIntervalDraft}
+        onChange={setBackupIntervalDraft}
+        min={1}
+        step={1}
+        error={backupIntervalError}
+        confirmLabel="Save"
+        confirmDisabled={!backupIntervalValid}
+        onCancel={() => setBackupIntervalOpen(false)}
+        onConfirm={saveBackupInterval}
       />
     </div>
   )

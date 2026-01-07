@@ -91,6 +91,8 @@ export type Diagram =
 export type AppState = {
   version: 1
   userName?: string
+  /** One-time security banner dismissal flag */
+  securityBannerDismissed?: boolean
   backupEnabled?: boolean
   backupIntervalHours?: number
   backupLastAt?: number
