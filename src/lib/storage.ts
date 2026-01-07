@@ -4,6 +4,14 @@ import type { AppState } from './types'
 const STORAGE_KEY = 'devdoc:v1'
 const EVENT_NAME = 'devdoc:storage'
 
+const DEFAULT_COLUMNS = [
+  { id: 'col_todo', title: 'Todo', order: 1, isSystem: true, createdAt: 0, updatedAt: 0 },
+  { id: 'col_doing', title: 'Doing', order: 2, isSystem: true, createdAt: 0, updatedAt: 0 },
+  { id: 'col_done', title: 'Done', order: 3, isSystem: true, createdAt: 0, updatedAt: 0 },
+]
+
+const DUMMY_TODO_ID = 'todo_welcome'
+
 function defaultState(): AppState {
   return {
     version: 1,
@@ -13,8 +21,19 @@ function defaultState(): AppState {
     backupLastAt: undefined,
     pomodoroFocusMinutes: 30,
     searchShortcutEnabled: true,
-    todos: [],
-    todoColumns: [],
+    todos: [
+      {
+        id: DUMMY_TODO_ID,
+        title: 'Welcome! Create your first todo with the + button (or Ctrl/Cmd+Alt+T).',
+        description: 'Tip: Drag cards between columns. Edit or delete this card anytime.',
+        tags: ['welcome'],
+        priority: 'medium',
+        columnId: 'col_todo',
+        createdAt: 0,
+        updatedAt: 0,
+      },
+    ],
+    todoColumns: DEFAULT_COLUMNS.slice(),
     notes: [],
     snippets: [],
     voiceDocs: [],
@@ -151,6 +170,8 @@ export function getState(): AppState {
   const json = localStorage.getItem(STORAGE_KEY)
   if (json === cachedJson) return cachedState
   if (!json) {
+    // Keep a stable in-memory snapshot when storage is empty (important for first-run UX).
+    if (cachedJson === null) return cachedState
     cachedJson = null
     cachedState = defaultState()
     return cachedState
@@ -162,7 +183,11 @@ export function getState(): AppState {
 }
 
 export function setState(updater: (prev: AppState) => AppState): void {
-  const next = updater(getState())
+  let next = updater(getState())
+  // Make the welcome dummy todo truly "first-time": once any real todo exists, drop it.
+  if (Array.isArray(next.todos) && next.todos.some((t) => t?.id && t.id !== DUMMY_TODO_ID)) {
+    next = { ...next, todos: next.todos.filter((t) => t.id !== DUMMY_TODO_ID) }
+  }
   const json = JSON.stringify(next)
   cachedJson = json
   cachedState = next

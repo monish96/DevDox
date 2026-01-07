@@ -28,11 +28,11 @@
 :root[data-theme='light'] {
   color-scheme: light;
   --bg: #f6f8ff;
-  --panel: rgba(10, 20, 40, 0.05);
-  --panel-2: rgba(10, 20, 40, 0.07);
+  --panel: rgba(10, 20, 40, 0.07);
+  --panel-2: rgba(10, 20, 40, 0.10);
   --text: rgba(10, 20, 40, 0.92);
-  --muted: rgba(10, 20, 40, 0.62);
-  --border: rgba(10, 20, 40, 0.14);
+  --muted: rgba(10, 20, 40, 0.72);
+  --border: rgba(10, 20, 40, 0.18);
   --accent: #0b76ff;
   --good: #0f9d58;
   --warn: #b26a00;

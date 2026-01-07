@@ -18,6 +18,77 @@ export function DashboardPage() {
   const [endAt, setEndAt] = useState<number | null>(null)
   const [remainingMs, setRemainingMs] = useState<number>(focusMs)
   const lastConfiguredMsRef = useRef<number>(focusMs)
+  const notifiedDoneRef = useRef(false)
+  const audioCtxRef = useRef<AudioContext | null>(null)
+
+  function ensureNotificationPermission() {
+    try {
+      if (!('Notification' in window)) return
+      if (Notification.permission === 'default') {
+        // Must be called from a user gesture (Start/Resume click) to avoid being blocked.
+        void Notification.requestPermission()
+      }
+    } catch {
+      // ignore
+    }
+  }
+
+  function ensureAudioContext() {
+    try {
+      const w = window as any
+      const Ctx = w.AudioContext || w.webkitAudioContext
+      if (!Ctx) return
+      const ctx: AudioContext = audioCtxRef.current ?? new Ctx()
+      audioCtxRef.current = ctx
+      if (ctx.state === 'suspended') void ctx.resume()
+    } catch {
+      // ignore
+    }
+  }
+
+  function playDoneSound() {
+    try {
+      const w = window as any
+      const Ctx = w.AudioContext || w.webkitAudioContext
+      if (!Ctx) return
+      const ctx: AudioContext = audioCtxRef.current ?? new Ctx()
+      audioCtxRef.current = ctx
+      if (ctx.state === 'suspended') void ctx.resume()
+
+      const o = ctx.createOscillator()
+      const g = ctx.createGain()
+      o.type = 'sine'
+      o.frequency.value = 880
+      g.gain.value = 0.0001
+      o.connect(g)
+      g.connect(ctx.destination)
+
+      const now = ctx.currentTime
+      g.gain.setValueAtTime(0.0001, now)
+      g.gain.exponentialRampToValueAtTime(0.12, now + 0.015)
+      g.gain.exponentialRampToValueAtTime(0.0001, now + 0.35)
+      o.start(now)
+      o.stop(now + 0.36)
+    } catch {
+      // ignore
+    }
+  }
+
+  function notifyDone() {
+    playDoneSound()
+    try {
+      if (!('Notification' in window)) return
+      if (Notification.permission !== 'granted') return
+      const n = new Notification('Pomodoro done', {
+        body: 'Time for a break.',
+        icon: '/devdox.svg',
+      })
+      // Some browsers keep notifications around; close quickly to reduce noise.
+      window.setTimeout(() => n.close(), 7_500)
+    } catch {
+      // ignore
+    }
+  }
 
   useEffect(() => {
     // If user changes focus length, update the timer ONLY if it's not in progress.
@@ -36,7 +107,12 @@ export function DashboardPage() {
       const left = Math.max(0, endAt - Date.now())
       setRemainingMs(left)
       if (left <= 0) {
+        if (!notifiedDoneRef.current) {
+          notifiedDoneRef.current = true
+          notifyDone()
+        }
         setRunning(false)
+        setEndAt(null)
       }
     }, 250)
     return () => window.clearInterval(t)
@@ -123,6 +199,9 @@ export function DashboardPage() {
                       label={remainingMs <= 0 || remainingMs === focusMs ? 'Start' : 'Resume'}
                       kind="primary"
                       onClick={() => {
+                        ensureNotificationPermission()
+                        ensureAudioContext()
+                        notifiedDoneRef.current = false
                         const now = Date.now()
                         const base = remainingMs > 0 ? remainingMs : focusMs
                         setRemainingMs(base)

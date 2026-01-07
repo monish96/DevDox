@@ -3,7 +3,7 @@ import { Excalidraw, exportToSvg } from '@excalidraw/excalidraw'
 import '@excalidraw/excalidraw/index.css'
 import { useSearchParams } from 'react-router-dom'
 import { IconButton } from '../components/IconButton'
-import { IconList, IconPlus, IconSave, IconTrash, IconX } from '../components/icons'
+import { IconCollapse, IconExpand, IconList, IconPlus, IconSave, IconTrash, IconX } from '../components/icons'
 import { newId } from '../lib/id'
 import { setState, useAppState } from '../lib/storage'
 import type { Diagram } from '../lib/types'
@@ -27,6 +27,51 @@ export function DiagramsPage() {
   const [dirty, setDirty] = useState(false)
   const sceneRef = useRef<any>(null)
   const [libraryOpen, setLibraryOpen] = useState(false)
+  const fullscreenRef = useRef<HTMLDivElement | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  function syncFullscreenState() {
+    const el = fullscreenRef.current
+    if (!el) {
+      setIsFullscreen(false)
+      return
+    }
+    const d: any = document as any
+    const fsEl = document.fullscreenElement ?? d.webkitFullscreenElement ?? null
+    setIsFullscreen(fsEl === el)
+  }
+
+  async function toggleFullscreen() {
+    const el = fullscreenRef.current as any
+    if (!el) return
+    const d: any = document as any
+    const fsEl = document.fullscreenElement ?? d.webkitFullscreenElement ?? null
+    try {
+      if (fsEl) {
+        if (document.exitFullscreen) await document.exitFullscreen()
+        else if (d.webkitExitFullscreen) d.webkitExitFullscreen()
+        return
+      }
+      if (el.requestFullscreen) await el.requestFullscreen()
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+    } catch {
+      // ignore (permission/gesture restrictions)
+    } finally {
+      syncFullscreenState()
+    }
+  }
+
+  useEffect(() => {
+    syncFullscreenState()
+    const onChange = () => syncFullscreenState()
+    document.addEventListener('fullscreenchange', onChange)
+    // Safari
+    document.addEventListener('webkitfullscreenchange' as any, onChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange)
+      document.removeEventListener('webkitfullscreenchange' as any, onChange)
+    }
+  }, [])
 
   useEffect(() => {
     const id = searchParams.get('diagramId')
@@ -270,28 +315,54 @@ export function DiagramsPage() {
                       placeholder="Diagram title"
                     />
                     <div className="panel" style={{ background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
-                      <div className="panelHeader">
-                        <div style={{ fontWeight: 650 }}>Canvas</div>
-                        <span className="pill">{dirty ? 'unsaved' : 'saved'}</span>
-                      </div>
-                      <div className="panelBody" style={{ padding: 0, height: 520 }}>
-                        {/* IMPORTANT: Excalidraw must be uncontrolled.
-                            Passing changing initialData causes an infinite update loop. */}
-                        <Excalidraw
-                          key={selected.id}
-                          theme={document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'}
-                          initialData={initialScene ?? undefined}
-                          onChange={(elements, appState, files) => {
-                            // appState contains non-serializable fields (e.g. collaborators: Map).
-                            // Keep a persistable snapshot in a ref to avoid render loops.
-                            sceneRef.current = {
-                              elements,
-                              appState: sanitizeAppState(appState),
-                              files,
-                            }
-                            setDirty((d) => d || true)
+                      <div
+                        ref={fullscreenRef}
+                        className="panel"
+                        style={{
+                          background: 'rgba(255,255,255,0.04)',
+                          overflow: 'hidden',
+                          display: 'flex',
+                          flexDirection: 'column',
+                          ...(isFullscreen ? { width: '100vw', height: '100vh', borderRadius: 0 } : {}),
+                        }}
+                      >
+                        <div className="panelHeader">
+                          <div style={{ fontWeight: 650 }}>Canvas</div>
+                          <div className="row" style={{ gap: 8 }}>
+                            <span className="pill">{dirty ? 'unsaved' : 'saved'}</span>
+                            <IconButton
+                              label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'}
+                              onClick={() => void toggleFullscreen()}
+                            >
+                              {isFullscreen ? <IconCollapse /> : <IconExpand />}
+                            </IconButton>
+                          </div>
+                        </div>
+                        <div
+                          className="panelBody"
+                          style={{
+                            padding: 0,
+                            height: isFullscreen ? 'calc(100vh - 56px)' : 520,
                           }}
-                        />
+                        >
+                          {/* IMPORTANT: Excalidraw must be uncontrolled.
+                              Passing changing initialData causes an infinite update loop. */}
+                          <Excalidraw
+                            key={selected.id}
+                            theme={document.documentElement.dataset.theme === 'light' ? 'light' : 'dark'}
+                            initialData={initialScene ?? undefined}
+                            onChange={(elements, appState, files) => {
+                              // appState contains non-serializable fields (e.g. collaborators: Map).
+                              // Keep a persistable snapshot in a ref to avoid render loops.
+                              sceneRef.current = {
+                                elements,
+                                appState: sanitizeAppState(appState),
+                                files,
+                              }
+                              setDirty((d) => d || true)
+                            }}
+                          />
+                        </div>
                       </div>
                     </div>
                   </>

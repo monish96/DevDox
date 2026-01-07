@@ -363,4 +363,36 @@ export function IconSearch(props: { size?: number }) {
   )
 }
 
+export function IconExpand(props: { size?: number }) {
+  const s = props.size ?? 16
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M9 4H4v5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 4l7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M15 20h5v-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 20l-7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M20 9V4h-5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 4l-7 7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4 15v5h5" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 20l7-7" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function IconCollapse(props: { size?: number }) {
+  const s = props.size ?? 16
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M10 4H4v6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 4l6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M14 20h6v-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 20l-6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M20 10V4h-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M20 4l-6 6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4 14v6h6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
+      <path d="M4 20l6-6" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
 

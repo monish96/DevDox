@@ -4,11 +4,8 @@ export type Theme = 'dark' | 'light'
 export function getInitialTheme(): Theme {
   const saved = localStorage.getItem(KEY)
   if (saved === 'dark' || saved === 'light') return saved
-  const prefersLight =
-    typeof window !== 'undefined' &&
-    window.matchMedia &&
-    window.matchMedia('(prefers-color-scheme: light)').matches
-  return prefersLight ? 'light' : 'dark'
+  // Default to dark mode unless the user explicitly chose otherwise.
+  return 'dark'
 }
 
 export function applyTheme(theme: Theme) {

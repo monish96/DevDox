@@ -57,6 +57,7 @@ export function NotesPage() {
 
   const treeRef = useRef<HTMLDivElement | null>(null)
   const forceEditNextNoteSelectionRef = useRef(false)
+  const forceEditNextSnippetSelectionRef = useRef(false)
   const [noteHistory, setNoteHistory] = useState<string[]>([])
   const [noteHistoryIdx, setNoteHistoryIdx] = useState(-1)
   const [collapsed, setCollapsed] = useState<Record<string, boolean>>({})
@@ -89,11 +90,19 @@ export function NotesPage() {
 
   useEffect(() => {
     if (!selectedSnippet) return
-    setSnippetEditing(false)
     setSnippetDraftTitle(selectedSnippet.title)
     setSnippetDraftLang(selectedSnippet.language)
     setSnippetDraftTags(selectedSnippet.tags.join(', '))
     setSnippetDraftCode(selectedSnippet.code)
+
+    // Default behavior: selecting an existing snippet shows preview.
+    // But when creating a new snippet, we want to land directly in edit mode.
+    if (forceEditNextSnippetSelectionRef.current) {
+      forceEditNextSnippetSelectionRef.current = false
+      setSnippetEditing(true)
+    } else {
+      setSnippetEditing(false)
+    }
   }, [selectedSnippet?.id])
 
   useEffect(() => {
@@ -157,9 +166,10 @@ export function NotesPage() {
       createdAt: now,
       updatedAt: now,
     }
+    setActive('snippets')
+    forceEditNextSnippetSelectionRef.current = true
     setState((prev) => ({ ...prev, snippets: [snip, ...prev.snippets] }))
     setSnippetId(snip.id)
-    setSnippetEditing(true)
     setSnippetDraftTitle(snip.title)
     setSnippetDraftLang(snip.language)
     setSnippetDraftTags('')
