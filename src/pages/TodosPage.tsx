@@ -32,7 +32,8 @@ export function TodosPage() {
     tags: '',
     priority: 'medium',
   })
-  const [editId, setEditId] = useState<string | null>(null)
+  const [modalTodoId, setModalTodoId] = useState<string | null>(null)
+  const [modalMode, setModalMode] = useState<'view' | 'edit'>('view')
   const [editTitle, setEditTitle] = useState('')
   const [editDue, setEditDue] = useState('')
   const [editDesc, setEditDesc] = useState('')
@@ -117,8 +118,9 @@ export function TodosPage() {
     }))
   }
 
-  function openEdit(todo: Todo) {
-    setEditId(todo.id)
+  function openTodoModal(todo: Todo, mode: 'view' | 'edit') {
+    setModalTodoId(todo.id)
+    setModalMode(mode)
     setEditTitle(todo.title ?? '')
     setEditDue(todo.dueDate ?? '')
     setEditDesc(todo.description ?? '')
@@ -134,21 +136,59 @@ export function TodosPage() {
     const t = todos.find((x) => x.id === id)
     if (!t) return
     lastAutoOpenedRef.current = id
-    openEdit(t)
+    openTodoModal(t, 'view')
   }, [searchParams, todos])
 
+  const modalTodo = useMemo(() => (modalTodoId ? todos.find((t) => t.id === modalTodoId) ?? null : null), [modalTodoId, todos])
+
+  function closeTodoModal() {
+    setModalTodoId(null)
+    setModalMode('view')
+  }
+
+  useEffect(() => {
+    if (!modalTodoId) return
+    const onKey = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        e.preventDefault()
+        closeTodoModal()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [modalTodoId])
+
+  useEffect(() => {
+    // If the todo got deleted while modal is open, close it.
+    if (modalTodoId && !modalTodo) closeTodoModal()
+  }, [modalTodoId, modalTodo])
+
   function saveEdit() {
-    if (!editId) return
+    if (!modalTodoId) return
     const title = editTitle.trim()
     if (!title) return
-    updateTodo(editId, {
+    updateTodo(modalTodoId, {
       title,
       dueDate: editDue.trim() || undefined,
       description: editDesc.trim() || '',
       tags: parseTags(editTags),
       priority: editPriority ?? 'medium',
     })
-    setEditId(null)
+    setModalMode('view')
+  }
+
+  function enterEditMode() {
+    if (!modalTodo) return
+    openTodoModal(modalTodo, 'edit')
+  }
+
+  function cancelEditMode() {
+    if (!modalTodo) {
+      closeTodoModal()
+      return
+    }
+    // Revert edits back to current persisted values.
+    openTodoModal(modalTodo, 'view')
   }
 
   function findColumnForTodo(id: string): string | null {
@@ -247,7 +287,8 @@ export function TodosPage() {
                   column={c}
                   todos={byCol.get(c.id) ?? []}
                   onRemove={removeTodo}
-                  onEdit={openEdit}
+                  onOpen={(todo) => openTodoModal(todo, 'view')}
+                  onEdit={(todo) => openTodoModal(todo, 'edit')}
                   doneColumnIds={doneColumnIds}
                   isDragging={!!activeId}
                 />
@@ -287,85 +328,134 @@ export function TodosPage() {
       />
       {!todoColumnId ? <div className="muted" style={{ marginTop: 10 }}>No columns found — create a column first.</div> : null}
 
-      {editId ? (
+      {modalTodoId && modalTodo ? (
         <div
           className="drawerOverlay"
           role="dialog"
           aria-modal="true"
-          aria-label="Edit todo"
-          onMouseDown={() => setEditId(null)}
+          aria-label={modalMode === 'edit' ? 'Edit todo' : 'View todo'}
+          onMouseDown={closeTodoModal}
         >
           <div className="panel drawerPanel" onMouseDown={(e) => e.stopPropagation()}>
             <div className="panelHeader">
-              <div style={{ fontWeight: 650 }}>Edit Todo</div>
-              <IconButton label="Close" onClick={() => setEditId(null)}>
+              <div style={{ fontWeight: 650 }}>{modalMode === 'edit' ? 'Edit Todo' : 'Todo'}</div>
+              <IconButton label="Close" onClick={closeTodoModal}>
                 <IconX />
               </IconButton>
             </div>
+
             <div className="panelBody col" style={{ gap: 10 }}>
-              <input
-                className="input"
-                placeholder="Title"
-                value={editTitle}
-                autoFocus
-                onChange={(e) => setEditTitle(e.target.value)}
-                onKeyDown={(e) => {
-                  if (e.key === 'Enter') saveEdit()
-                  if (e.key === 'Escape') setEditId(null)
-                }}
-              />
-              <textarea
-                className="input"
-                placeholder="Description"
-                value={editDesc}
-                onChange={(e) => setEditDesc(e.target.value)}
-                rows={6}
-                style={{ resize: 'vertical' }}
-              />
-              <div className="row" style={{ gap: 8, alignItems: 'stretch' }}>
-                <input
-                  className="input"
-                  type="date"
-                  value={editDue}
-                  onChange={(e) => setEditDue(e.target.value)}
-                  title="Due date"
-                  style={{ maxWidth: 200 }}
-                />
-                <select
-                  className="input"
-                  value={editPriority ?? 'medium'}
-                  onChange={(e) => setEditPriority(e.target.value as Todo['priority'])}
-                  title="Priority"
-                  style={{ maxWidth: 220 }}
-                >
-                  <option value="lowest">Lowest</option>
-                  <option value="low">Low</option>
-                  <option value="medium">Medium</option>
-                  <option value="high">High</option>
-                  <option value="highest">Highest</option>
-                </select>
-              </div>
-              <input
-                className="input"
-                placeholder="Tags (comma separated)"
-                value={editTags}
-                onChange={(e) => setEditTags(e.target.value)}
-              />
-              <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
-                <IconButton
-                  label="Delete"
-                  kind="danger"
-                  onClick={() => {
-                    removeTodo(editId)
-                    setEditId(null)
-                  }}
-                >
-                  <IconTrash />
-                </IconButton>
-                <IconButton label="Save" kind="primary" onClick={saveEdit}>
-                  <IconSave />
-                </IconButton>
-              </div>
+              {modalMode === 'edit' ? (
+                <>
+                  <input
+                    className="input"
+                    placeholder="Title"
+                    value={editTitle}
+                    autoFocus
+                    onChange={(e) => setEditTitle(e.target.value)}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter') saveEdit()
+                    }}
+                  />
+                  <textarea
+                    className="input"
+                    placeholder="Description"
+                    value={editDesc}
+                    onChange={(e) => setEditDesc(e.target.value)}
+                    rows={6}
+                    style={{ resize: 'vertical' }}
+                  />
+                  <div className="row" style={{ gap: 8, alignItems: 'stretch' }}>
+                    <input
+                      className="input"
+                      type="date"
+                      value={editDue}
+                      onChange={(e) => setEditDue(e.target.value)}
+                      title="Due date"
+                      style={{ maxWidth: 200 }}
+                    />
+                    <select
+                      className="input"
+                      value={editPriority ?? 'medium'}
+                      onChange={(e) => setEditPriority(e.target.value as Todo['priority'])}
+                      title="Priority"
+                      style={{ maxWidth: 220 }}
+                    >
+                      <option value="lowest">Lowest</option>
+                      <option value="low">Low</option>
+                      <option value="medium">Medium</option>
+                      <option value="high">High</option>
+                      <option value="highest">Highest</option>
+                    </select>
+                  </div>
+                  <input
+                    className="input"
+                    placeholder="Tags (comma separated)"
+                    value={editTags}
+                    onChange={(e) => setEditTags(e.target.value)}
+                  />
+
+                  <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
+                    <IconButton
+                      label="Delete"
+                      kind="danger"
+                      onClick={() => {
+                        removeTodo(modalTodoId)
+                        closeTodoModal()
+                      }}
+                    >
+                      <IconTrash />
+                    </IconButton>
+                    <div className="row" style={{ gap: 8 }}>
+                      <IconButton label="Cancel" onClick={cancelEditMode}>
+                        <IconX />
+                      </IconButton>
+                      <IconButton label="Save" kind="primary" onClick={saveEdit}>
+                        <IconSave />
+                      </IconButton>
+                    </div>
+                  </div>
+                </>
+              ) : (
+                <>
+                  <div className="col" style={{ gap: 6 }}>
+                    <div style={{ fontWeight: 800, fontSize: 18, lineHeight: 1.2 }}>{modalTodo.title}</div>
+                    <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      <span className="pill">{modalTodo.dueDate ? `Due ${modalTodo.dueDate}` : 'No due date'}</span>
+                      <span className="pill">{`Priority: ${modalTodo.priority ?? 'medium'}`}</span>
+                      {(modalTodo.tags ?? []).slice(0, 8).map((t) => (
+                        <span key={t} className="tagChip">
+                          {t}
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+
+                  {(modalTodo.description ?? '').trim() ? (
+                    <div className="muted" style={{ whiteSpace: 'pre-wrap', lineHeight: 1.45 }}>
+                      {(modalTodo.description ?? '').trim()}
+                    </div>
+                  ) : (
+                    <div className="muted">No description.</div>
+                  )}
+
+                  <div className="row" style={{ justifyContent: 'space-between', gap: 8 }}>
+                    <IconButton
+                      label="Delete"
+                      kind="danger"
+                      onClick={() => {
+                        removeTodo(modalTodoId)
+                        closeTodoModal()
+                      }}
+                    >
+                      <IconTrash />
+                    </IconButton>
+                    <IconButton label="Edit" kind="primary" onClick={enterEditMode}>
+                      <IconEdit />
+                    </IconButton>
+                  </div>
+                </>
+              )}
             </div>
           </div>
         </div>
@@ -378,6 +468,7 @@ function KanbanColumn(props: {
   column: TodoColumn
   todos: Todo[]
   onRemove: (id: string) => void
+  onOpen: (todo: Todo) => void
   onEdit: (todo: Todo) => void
   doneColumnIds: Set<string>
   isDragging: boolean
@@ -398,6 +489,7 @@ function KanbanColumn(props: {
               todo={t}
               isDone={props.doneColumnIds.has(props.column.id)}
               onRemove={props.onRemove}
+              onOpen={props.onOpen}
               onEdit={props.onEdit}
             />
           ))}
@@ -419,6 +511,7 @@ function KanbanCard(props: {
   todo: Todo
   isDone: boolean
   onRemove: (id: string) => void
+  onOpen: (todo: Todo) => void
   onEdit: (todo: Todo) => void
 }) {
   const { attributes, listeners, setNodeRef, transform, transition, isDragging } = useSortable({ id: props.todo.id })
@@ -435,16 +528,36 @@ function KanbanCard(props: {
   const desc = (props.todo.description ?? '').trim()
 
   return (
-    <div ref={setNodeRef} style={style} className="kanbanCard" {...attributes} {...listeners}>
+    <div
+      ref={setNodeRef}
+      style={style}
+      className="kanbanCard"
+      {...attributes}
+      {...listeners}
+      onClick={() => {
+        if (isDragging) return
+        props.onOpen(props.todo)
+      }}
+      onKeyDown={(e) => {
+        if (e.key === 'Enter' || e.key === ' ') {
+          e.preventDefault()
+          props.onOpen(props.todo)
+        }
+      }}
+    >
       <div className="row" style={{ justifyContent: 'space-between', gap: 10 }}>
         <div className="kanbanCardTitle">{props.todo.title}</div>
         <div className="row" style={{ gap: 6 }}>
-          <IconButton label="Edit" onClick={() => props.onEdit(props.todo)}>
-            <IconEdit />
-          </IconButton>
-          <IconButton label="Delete" kind="danger" onClick={() => props.onRemove(props.todo.id)}>
-            <IconTrash />
-          </IconButton>
+          <span onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+            <IconButton label="Edit" onClick={() => props.onEdit(props.todo)}>
+              <IconEdit />
+            </IconButton>
+          </span>
+          <span onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+            <IconButton label="Delete" kind="danger" onClick={() => props.onRemove(props.todo.id)}>
+              <IconTrash />
+            </IconButton>
+          </span>
         </div>
       </div>
       {desc ? (
