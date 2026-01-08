@@ -21,9 +21,9 @@ DevDox is a **local-first developer workstation**: keep your *todos*, *notes*, *
 
 ## Screenshots
 
-### Todos (Jira-style Kanban)
+### Todos (Jira-style Kanban or checklist style)
 
-![Todos Kanban Screenshot](docs/screenshot-todos.svg)
+
 
 ### Notes (tree + preview)
 
