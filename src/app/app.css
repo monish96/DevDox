@@ -754,6 +754,30 @@
   background: rgba(116, 199, 255, 0.12);
 }
 
+.todoChecklistRow {
+  cursor: pointer;
+}
+
+.todoChecklistTitle {
+  font-weight: 700;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.todoChecklistDone {
+  opacity: 0.75;
+}
+
+.todoChecklistDone .todoChecklistTitle {
+  text-decoration: line-through;
+  color: var(--muted);
+}
+
+.todoChecklistImportant {
+  color: var(--text);
+}
+
 .treeToggle {
   width: 22px;
   height: 22px;

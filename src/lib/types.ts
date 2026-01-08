@@ -19,6 +19,10 @@ export type Todo = {
   status?: TodoStatus
   /** Kanban column id */
   columnId?: string
+  /** Checklist completion state (used in checkbox-style view) */
+  completedAt?: number
+  /** Checklist importance flag (used in checkbox-style view) */
+  important?: boolean
   description?: string
   tags?: string[]
   priority?: 'lowest' | 'low' | 'medium' | 'high' | 'highest'
@@ -93,6 +97,8 @@ export type AppState = {
   userName?: string
   /** One-time security banner dismissal flag */
   securityBannerDismissed?: boolean
+  /** Preferred todo UI */
+  todoViewMode?: 'kanban' | 'checklist'
   backupEnabled?: boolean
   backupIntervalHours?: number
   backupLastAt?: number

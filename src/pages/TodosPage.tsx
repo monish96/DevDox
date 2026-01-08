@@ -14,7 +14,7 @@ import { CSS } from '@dnd-kit/utilities'
 import { useSearchParams } from 'react-router-dom'
 import { IconButton } from '../components/IconButton'
 import { TodoCreateDrawer, type TodoDraft } from '../components/TodoCreateDrawer'
-import { IconEdit, IconPlus, IconSave, IconTrash, IconX } from '../components/icons'
+import { IconCheck, IconEdit, IconKanban, IconList, IconPlus, IconSave, IconStar, IconTrash, IconX } from '../components/icons'
 import { newId } from '../lib/id'
 import { setState, useAppState } from '../lib/storage'
 import type { Todo, TodoColumn } from '../lib/types'
@@ -23,6 +23,7 @@ export function TodosPage() {
   const [searchParams] = useSearchParams()
   const todos = useAppState((s) => s.todos)
   const columns = useAppState((s) => s.todoColumns)
+  const todoViewMode = useAppState((s) => s.todoViewMode)
   const [activeId, setActiveId] = useState<string | null>(null)
   const [newOpen, setNewOpen] = useState(false)
   const [newDraft, setNewDraft] = useState<TodoDraft>({
@@ -58,6 +59,11 @@ export function TodosPage() {
     return new Set(visibleColumns.filter((c) => c.title.toLowerCase() === 'done').map((c) => c.id))
   }, [visibleColumns])
 
+  const doneColumnId = useMemo(() => {
+    const d = visibleColumns.find((c) => c.title.toLowerCase() === 'done')?.id
+    return d ?? visibleColumns[visibleColumns.length - 1]?.id ?? null
+  }, [visibleColumns])
+
   const byCol = useMemo(() => {
     const map = new Map<string, Todo[]>()
     for (const c of visibleColumns) map.set(c.id, [])
@@ -74,6 +80,20 @@ export function TodosPage() {
     }
     return map
   }, [todos, visibleColumns])
+
+  const checklist = useMemo(() => {
+    const active = todos.filter((t) => !t.archivedAt && !t.completedAt)
+    const done = todos.filter((t) => !t.archivedAt && !!t.completedAt)
+    function score(t: Todo): string {
+      const imp = t.important ? '0' : '1'
+      const due = t.dueDate ?? '9999-99-99'
+      const ord = String(t.order ?? t.createdAt).padStart(20, '0')
+      return `${imp}_${due}_${ord}`
+    }
+    active.sort((a, b) => score(a).localeCompare(score(b)))
+    done.sort((a, b) => (b.completedAt ?? 0) - (a.completedAt ?? 0))
+    return { active, done }
+  }, [todos])
 
   function parseTags(s: string): string[] {
     return s
@@ -98,6 +118,8 @@ export function TodosPage() {
       description: newDraft.description.trim() || '',
       tags: parseTags(newDraft.tags),
       priority: newDraft.priority ?? 'medium',
+      important: false,
+      completedAt: undefined,
       order: max + 1,
       createdAt: now,
       updatedAt: now,
@@ -116,6 +138,22 @@ export function TodosPage() {
       ...prev,
       todos: prev.todos.map((t) => (t.id === id ? { ...t, ...patch, updatedAt: Date.now() } : t)),
     }))
+  }
+
+  function toggleImportant(todo: Todo) {
+    updateTodo(todo.id, { important: !(todo.important ?? false) })
+  }
+
+  function toggleCompleted(todo: Todo) {
+    const now = Date.now()
+    const nextCompletedAt = todo.completedAt ? undefined : now
+    let nextColumnId = todo.columnId
+    // Keep Kanban and Checklist reasonably in sync:
+    // - checking a todo moves it to Done (if exists)
+    // - unchecking moves it back to Todo (if exists)
+    if (nextCompletedAt && doneColumnId) nextColumnId = doneColumnId
+    if (!nextCompletedAt && todoColumnId) nextColumnId = todoColumnId
+    updateTodo(todo.id, { completedAt: nextCompletedAt, columnId: nextColumnId })
   }
 
   function openTodoModal(todo: Todo, mode: 'view' | 'edit') {
@@ -222,6 +260,20 @@ export function TodosPage() {
           <div style={{ fontWeight: 750 }}>Todos</div>
           <div className="row" style={{ gap: 8 }}>
             <IconButton
+              label="Kanban view"
+              kind={(todoViewMode ?? 'kanban') === 'kanban' ? 'primary' : 'default'}
+              onClick={() => setState((prev) => ({ ...prev, todoViewMode: 'kanban' }))}
+            >
+              <IconKanban />
+            </IconButton>
+            <IconButton
+              label="Checklist view"
+              kind={(todoViewMode ?? 'kanban') === 'checklist' ? 'primary' : 'default'}
+              onClick={() => setState((prev) => ({ ...prev, todoViewMode: 'checklist' }))}
+            >
+              <IconList />
+            </IconButton>
+            <IconButton
               label="New todo"
               kind="primary"
               onClick={() => {
@@ -233,88 +285,201 @@ export function TodosPage() {
           </div>
         </div>
         <div className="panelBody">
-          <DndContext
-            sensors={sensors}
-            collisionDetection={closestCenter}
-            onDragStart={({ active }) => setActiveId(String(active.id))}
-            onDragCancel={() => setActiveId(null)}
-            onDragEnd={({ active, over }) => {
-              setActiveId(null)
-              if (!over) return
-              const activeId = String(active.id)
-              const overId = String(over.id)
-              if (activeId === overId) return
+          {(todoViewMode ?? 'kanban') === 'checklist' ? (
+            <div className="col" style={{ gap: 10 }}>
+              <div className="muted" style={{ fontSize: 12 }}>
+                Tip: Click a row to view. Use the checkbox to complete. Use the star to mark important.
+              </div>
 
-              const fromCol = findColumnForTodo(activeId)
-              const toCol =
-                overId.startsWith('col:')
-                  ? overId.slice('col:'.length)
-                  : findColumnForTodo(overId)
+              <div className="col" style={{ gap: 8 }}>
+                {checklist.active.map((t) => (
+                  <div
+                    key={t.id}
+                    className="listItem todoChecklistRow"
+                    role="button"
+                    tabIndex={0}
+                    onClick={() => openTodoModal(t, 'view')}
+                    onKeyDown={(e) => {
+                      if (e.key === 'Enter' || e.key === ' ') {
+                        e.preventDefault()
+                        openTodoModal(t, 'view')
+                      }
+                    }}
+                    style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 10, alignItems: 'center' }}
+                  >
+                    <span
+                      className="row"
+                      style={{ gap: 8, alignItems: 'center' }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <input type="checkbox" checked={!!t.completedAt} onChange={() => toggleCompleted(t)} aria-label="Mark completed" />
+                    </span>
 
-              if (!fromCol || !toCol) return
-
-              const fromList = (byCol.get(fromCol) ?? []).slice()
-              const toList = fromCol === toCol ? fromList : (byCol.get(toCol) ?? []).slice()
-
-              const fromIndex = fromList.findIndex((t) => t.id === activeId)
-              if (fromIndex < 0) return
-              const moving = fromList[fromIndex]
-
-              // Remove from source
-              fromList.splice(fromIndex, 1)
-
-              // Insert into target
-              let toIndex = toList.length
-              if (!overId.startsWith('col:')) {
-                const idx = toList.findIndex((t) => t.id === overId)
-                if (idx >= 0) toIndex = idx
-              }
-              toList.splice(toIndex, 0, { ...moving, columnId: toCol })
-
-              // Reindex orders in affected columns
-              const patches: Array<{ id: string; columnId?: string; order?: number }> = []
-              for (const p of reindex(toList)) patches.push({ id: p.id, columnId: toCol, order: p.order })
-              if (fromCol !== toCol) {
-                for (const p of reindex(fromList)) patches.push({ id: p.id, columnId: fromCol, order: p.order })
-              }
-              setOrders(patches)
-            }}
-          >
-            <div className="kanban">
-              {visibleColumns.map((c) => (
-                <KanbanColumn
-                  key={c.id}
-                  column={c}
-                  todos={byCol.get(c.id) ?? []}
-                  onRemove={removeTodo}
-                  onOpen={(todo) => openTodoModal(todo, 'view')}
-                  onEdit={(todo) => openTodoModal(todo, 'edit')}
-                  doneColumnIds={doneColumnIds}
-                  isDragging={!!activeId}
-                />
-              ))}
-            </div>
-            <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
-              {activeTodo ? (
-                <div className="kanbanCard dragOverlay">
-                  <div className="row" style={{ justifyContent: 'space-between', gap: 10 }}>
-                    <div className="kanbanCardTitle">{activeTodo.title}</div>
-                  </div>
-                  <div className="kanbanCardMeta">
-                    <div className="jiraMeta">
-                      <span className={`prioDot prio_${(activeTodo.priority ?? 'medium')}`.trim()} />
-                      {(activeTodo.tags ?? []).slice(0, 3).map((tag) => (
-                        <span key={tag} className="tagChip">
-                          {tag}
-                        </span>
-                      ))}
+                    <div style={{ minWidth: 0 }}>
+                      <div className={`todoChecklistTitle ${(t.important ? 'todoChecklistImportant' : '')}`.trim()}>
+                        {t.title}
+                      </div>
+                      <div className="row" style={{ gap: 8, marginTop: 4, flexWrap: 'wrap' }}>
+                        {t.dueDate ? <span className="pill">{`Due ${t.dueDate}`}</span> : null}
+                        {(t.tags ?? []).slice(0, 3).map((tag) => (
+                          <span key={tag} className="tagChip">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
                     </div>
-                    {activeTodo.dueDate ? <span className="pill">{activeTodo.dueDate}</span> : null}
+
+                    <span
+                      className="row"
+                      style={{ gap: 6, alignItems: 'center' }}
+                      onPointerDown={(e) => e.stopPropagation()}
+                      onClick={(e) => e.stopPropagation()}
+                    >
+                      <IconButton
+                        label={t.important ? 'Unmark important' : 'Mark important'}
+                        kind={t.important ? 'primary' : 'default'}
+                        onClick={() => toggleImportant(t)}
+                      >
+                        <IconStar />
+                      </IconButton>
+                      <IconButton label="Edit" onClick={() => openTodoModal(t, 'edit')}>
+                        <IconEdit />
+                      </IconButton>
+                    </span>
                   </div>
+                ))}
+                {!checklist.active.length ? <div className="muted">No active todos.</div> : null}
+              </div>
+
+              {checklist.done.length ? (
+                <div className="col" style={{ gap: 8, marginTop: 8 }}>
+                  <div className="row" style={{ justifyContent: 'space-between', alignItems: 'center' }}>
+                    <div style={{ fontWeight: 700 }}>Completed</div>
+                    <span className="pill">{checklist.done.length}</span>
+                  </div>
+                  {checklist.done.slice(0, 100).map((t) => (
+                    <div
+                      key={t.id}
+                      className="listItem todoChecklistRow todoChecklistDone"
+                      role="button"
+                      tabIndex={0}
+                      onClick={() => openTodoModal(t, 'view')}
+                      style={{ display: 'grid', gridTemplateColumns: 'auto 1fr auto', gap: 10, alignItems: 'center' }}
+                    >
+                      <span
+                        className="row"
+                        style={{ gap: 8, alignItems: 'center' }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <input type="checkbox" checked={!!t.completedAt} onChange={() => toggleCompleted(t)} aria-label="Mark not completed" />
+                      </span>
+                      <div style={{ minWidth: 0 }}>
+                        <div className="todoChecklistTitle">{t.title}</div>
+                        <div className="muted" style={{ fontSize: 12, marginTop: 3 }}>
+                          Completed {t.completedAt ? new Date(t.completedAt).toLocaleString() : ''}
+                        </div>
+                      </div>
+                      <span
+                        className="row"
+                        style={{ gap: 6, alignItems: 'center' }}
+                        onPointerDown={(e) => e.stopPropagation()}
+                        onClick={(e) => e.stopPropagation()}
+                      >
+                        <IconButton label="Reopen" onClick={() => toggleCompleted(t)}>
+                          <IconCheck />
+                        </IconButton>
+                      </span>
+                    </div>
+                  ))}
                 </div>
               ) : null}
-            </DragOverlay>
-          </DndContext>
+            </div>
+          ) : (
+            <DndContext
+              sensors={sensors}
+              collisionDetection={closestCenter}
+              onDragStart={({ active }) => setActiveId(String(active.id))}
+              onDragCancel={() => setActiveId(null)}
+              onDragEnd={({ active, over }) => {
+                setActiveId(null)
+                if (!over) return
+                const activeId = String(active.id)
+                const overId = String(over.id)
+                if (activeId === overId) return
+
+                const fromCol = findColumnForTodo(activeId)
+                const toCol =
+                  overId.startsWith('col:')
+                    ? overId.slice('col:'.length)
+                    : findColumnForTodo(overId)
+
+                if (!fromCol || !toCol) return
+
+                const fromList = (byCol.get(fromCol) ?? []).slice()
+                const toList = fromCol === toCol ? fromList : (byCol.get(toCol) ?? []).slice()
+
+                const fromIndex = fromList.findIndex((t) => t.id === activeId)
+                if (fromIndex < 0) return
+                const moving = fromList[fromIndex]
+
+                // Remove from source
+                fromList.splice(fromIndex, 1)
+
+                // Insert into target
+                let toIndex = toList.length
+                if (!overId.startsWith('col:')) {
+                  const idx = toList.findIndex((t) => t.id === overId)
+                  if (idx >= 0) toIndex = idx
+                }
+                toList.splice(toIndex, 0, { ...moving, columnId: toCol })
+
+                // Reindex orders in affected columns
+                const patches: Array<{ id: string; columnId?: string; order?: number }> = []
+                for (const p of reindex(toList)) patches.push({ id: p.id, columnId: toCol, order: p.order })
+                if (fromCol !== toCol) {
+                  for (const p of reindex(fromList)) patches.push({ id: p.id, columnId: fromCol, order: p.order })
+                }
+                setOrders(patches)
+              }}
+            >
+              <div className="kanban">
+                {visibleColumns.map((c) => (
+                  <KanbanColumn
+                    key={c.id}
+                    column={c}
+                    todos={byCol.get(c.id) ?? []}
+                    onRemove={removeTodo}
+                    onOpen={(todo) => openTodoModal(todo, 'view')}
+                    onEdit={(todo) => openTodoModal(todo, 'edit')}
+                    doneColumnIds={doneColumnIds}
+                    isDragging={!!activeId}
+                  />
+                ))}
+              </div>
+              <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
+                {activeTodo ? (
+                  <div className="kanbanCard dragOverlay">
+                    <div className="row" style={{ justifyContent: 'space-between', gap: 10 }}>
+                      <div className="kanbanCardTitle">{activeTodo.title}</div>
+                    </div>
+                    <div className="kanbanCardMeta">
+                      <div className="jiraMeta">
+                        <span className={`prioDot prio_${(activeTodo.priority ?? 'medium')}`.trim()} />
+                        {(activeTodo.tags ?? []).slice(0, 3).map((tag) => (
+                          <span key={tag} className="tagChip">
+                            {tag}
+                          </span>
+                        ))}
+                      </div>
+                      {activeTodo.dueDate ? <span className="pill">{activeTodo.dueDate}</span> : null}
+                    </div>
+                  </div>
+                ) : null}
+              </DragOverlay>
+            </DndContext>
+          )}
         </div>
       </div>
 
@@ -421,6 +586,8 @@ export function TodosPage() {
                   <div className="col" style={{ gap: 6 }}>
                     <div style={{ fontWeight: 800, fontSize: 18, lineHeight: 1.2 }}>{modalTodo.title}</div>
                     <div className="row" style={{ gap: 8, flexWrap: 'wrap', alignItems: 'center' }}>
+                      {modalTodo.important ? <span className="pill pillWarn">important</span> : null}
+                      {modalTodo.completedAt ? <span className="pill">completed</span> : null}
                       <span className="pill">{modalTodo.dueDate ? `Due ${modalTodo.dueDate}` : 'No due date'}</span>
                       <span className="pill">{`Priority: ${modalTodo.priority ?? 'medium'}`}</span>
                       {(modalTodo.tags ?? []).slice(0, 8).map((t) => (
@@ -450,9 +617,21 @@ export function TodosPage() {
                     >
                       <IconTrash />
                     </IconButton>
-                    <IconButton label="Edit" kind="primary" onClick={enterEditMode}>
-                      <IconEdit />
-                    </IconButton>
+                    <div className="row" style={{ gap: 8 }}>
+                      <IconButton
+                        label={modalTodo.important ? 'Unmark important' : 'Mark important'}
+                        kind={modalTodo.important ? 'primary' : 'default'}
+                        onClick={() => toggleImportant(modalTodo)}
+                      >
+                        <IconStar />
+                      </IconButton>
+                      <IconButton label={modalTodo.completedAt ? 'Reopen' : 'Mark completed'} onClick={() => toggleCompleted(modalTodo)}>
+                        <IconCheck />
+                      </IconButton>
+                      <IconButton label="Edit" kind="primary" onClick={enterEditMode}>
+                        <IconEdit />
+                      </IconButton>
+                    </div>
                   </div>
                 </>
               )}
@@ -526,6 +705,7 @@ function KanbanCard(props: {
   const tags = props.todo.tags ?? []
   const prio = props.todo.priority ?? 'medium'
   const desc = (props.todo.description ?? '').trim()
+  const important = !!props.todo.important
 
   return (
     <div
@@ -548,6 +728,13 @@ function KanbanCard(props: {
       <div className="row" style={{ justifyContent: 'space-between', gap: 10 }}>
         <div className="kanbanCardTitle">{props.todo.title}</div>
         <div className="row" style={{ gap: 6 }}>
+          <span onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
+            {important ? (
+              <span className="pill pillWarn" title="Important">
+                !
+              </span>
+            ) : null}
+          </span>
           <span onPointerDown={(e) => e.stopPropagation()} onClick={(e) => e.stopPropagation()}>
             <IconButton label="Edit" onClick={() => props.onEdit(props.todo)}>
               <IconEdit />

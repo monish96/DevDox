@@ -2,7 +2,7 @@ import { useMemo, useRef, useState } from 'react'
 import { ConfirmDialog } from '../components/ConfirmDialog'
 import { IconButton } from '../components/IconButton'
 import { PromptDialog } from '../components/PromptDialog'
-import { IconDownload, IconEdit, IconPlus, IconSave, IconTrash, IconUpload } from '../components/icons'
+import { IconDownload, IconEdit, IconKanban, IconList, IconPlus, IconSave, IconTrash, IconUpload } from '../components/icons'
 import { newId } from '../lib/id'
 import { setState, useAppState } from '../lib/storage'
 import { downloadSession, importSessionFile } from '../lib/sessionFile'
@@ -16,6 +16,7 @@ export function SettingsPage() {
   const backupLastAt = useAppState((s) => s.backupLastAt)
   const pomodoroFocusMinutes = useAppState((s) => s.pomodoroFocusMinutes)
   const searchShortcutEnabled = useAppState((s) => s.searchShortcutEnabled)
+  const todoViewMode = useAppState((s) => s.todoViewMode)
 
   const [newColTitle, setNewColTitle] = useState('')
   const [renamingId, setRenamingId] = useState<string | null>(null)
@@ -235,6 +236,30 @@ export function SettingsPage() {
               />
               <span style={{ fontWeight: 650 }}>Enable Ctrl/Cmd+K shortcut</span>
             </label>
+          </div>
+
+          <div className="sideCard">
+            <div className="sideTitle">Todos view</div>
+            <div className="sideCaption">
+              Choose how todos are displayed. Kanban is the default. Checklist view supports completion checkboxes and an important flag.
+            </div>
+
+            <div className="row" style={{ gap: 8, alignItems: 'center', flexWrap: 'wrap' }}>
+              <IconButton
+                label="Kanban view"
+                kind={(todoViewMode ?? 'kanban') === 'kanban' ? 'primary' : 'default'}
+                onClick={() => setState((prev) => ({ ...prev, todoViewMode: 'kanban' }))}
+              >
+                <IconKanban />
+              </IconButton>
+              <IconButton
+                label="Checklist view"
+                kind={(todoViewMode ?? 'kanban') === 'checklist' ? 'primary' : 'default'}
+                onClick={() => setState((prev) => ({ ...prev, todoViewMode: 'checklist' }))}
+              >
+                <IconList />
+              </IconButton>
+            </div>
           </div>
 
           <div className="sideCard">

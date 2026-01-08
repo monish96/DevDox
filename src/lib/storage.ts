@@ -17,6 +17,7 @@ function defaultState(): AppState {
     version: 1,
     userName: undefined,
     securityBannerDismissed: false,
+    todoViewMode: 'kanban',
     backupEnabled: true,
     backupIntervalHours: 24,
     backupLastAt: undefined,
@@ -90,6 +91,7 @@ function normalizeState(raw: unknown): AppState {
     version: 1,
     userName: typeof (r as any).userName === 'string' ? (r as any).userName : undefined,
     securityBannerDismissed: typeof (r as any).securityBannerDismissed === 'boolean' ? (r as any).securityBannerDismissed : false,
+    todoViewMode: (r as any).todoViewMode === 'checklist' || (r as any).todoViewMode === 'kanban' ? (r as any).todoViewMode : 'kanban',
     backupEnabled: typeof (r as any).backupEnabled === 'boolean' ? (r as any).backupEnabled : true,
     backupIntervalHours: typeof (r as any).backupIntervalHours === 'number' ? (r as any).backupIntervalHours : 24,
     backupLastAt: typeof (r as any).backupLastAt === 'number' ? (r as any).backupLastAt : undefined,
@@ -105,6 +107,8 @@ function normalizeState(raw: unknown): AppState {
           archivedAt: typeof t?.archivedAt === 'number' ? t.archivedAt : undefined,
           description: typeof t?.description === 'string' ? t.description : '',
           tags: Array.isArray(t?.tags) ? t.tags.filter((x: any) => typeof x === 'string') : [],
+          completedAt: typeof t?.completedAt === 'number' ? t.completedAt : undefined,
+          important: typeof t?.important === 'boolean' ? t.important : false,
           priority:
             t?.priority === 'lowest' || t?.priority === 'low' || t?.priority === 'medium' || t?.priority === 'high' || t?.priority === 'highest'
               ? t.priority

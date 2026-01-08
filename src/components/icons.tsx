@@ -185,6 +185,32 @@ export function IconList(props: { size?: number }) {
   )
 }
 
+export function IconKanban(props: { size?: number }) {
+  const s = props.size ?? 16
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path d="M4 5h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4 19h16" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M4 5v14M12 5v14M20 5v14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      <path d="M6.5 8h3M6.5 11h3M14.5 9h3M14.5 12h3" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+    </svg>
+  )
+}
+
+export function IconStar(props: { size?: number }) {
+  const s = props.size ?? 16
+  return (
+    <svg width={s} height={s} viewBox="0 0 24 24" fill="none" aria-hidden="true">
+      <path
+        d="M12 3.5l2.7 5.5 6.1.9-4.4 4.3 1 6.1L12 17.7 6.6 20.3l1-6.1-4.4-4.3 6.1-.9L12 3.5z"
+        stroke="currentColor"
+        strokeWidth="2"
+        strokeLinejoin="round"
+      />
+    </svg>
+  )
+}
+
 export function IconSun(props: { size?: number }) {
   const s = props.size ?? 16
   return (
