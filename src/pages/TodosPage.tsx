@@ -460,7 +460,7 @@ export function TodosPage() {
               </div>
               <DragOverlay dropAnimation={{ duration: 180, easing: 'cubic-bezier(0.2, 0.8, 0.2, 1)' }}>
                 {activeTodo ? (
-                  <div className="kanbanCard dragOverlay">
+                  <div className="kanbanCard dragOverlay kanbanCardDragging">
                     <div className="row" style={{ justifyContent: 'space-between', gap: 10 }}>
                       <div className="kanbanCardTitle">{activeTodo.title}</div>
                     </div>
@@ -711,7 +711,7 @@ function KanbanCard(props: {
     <div
       ref={setNodeRef}
       style={style}
-      className="kanbanCard"
+      className={`kanbanCard ${isDragging ? 'kanbanCardDragging' : ''}`.trim()}
       {...attributes}
       {...listeners}
       onClick={() => {

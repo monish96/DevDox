@@ -560,11 +560,18 @@
   display: flex;
   flex-direction: column;
   gap: 8px;
+  cursor: grab;
   transition:
     transform 160ms ease,
     box-shadow 160ms ease,
     border-color 160ms ease,
     background 160ms ease;
+}
+
+.kanbanCard:active,
+.kanbanCardDragging,
+.kanbanCard.dragOverlay {
+  cursor: grabbing;
 }
 
 .kanbanCard:hover {
