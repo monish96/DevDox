@@ -1,6 +1,10 @@
 /* DevDoc - minimal, fast, dev-friendly styling (no framework) */
 :root {
   --bg: #0b1020;
+  --pageBg:
+    radial-gradient(1200px 700px at 30% -20%, rgba(116, 199, 255, 0.25), transparent 60%),
+    radial-gradient(900px 700px at 100% 0%, rgba(69, 212, 131, 0.12), transparent 55%),
+    var(--bg);
   --panel: rgba(255, 255, 255, 0.06);
   --panel-2: rgba(255, 255, 255, 0.08);
   --text: rgba(255, 255, 255, 0.92);
@@ -28,6 +32,10 @@
 :root[data-theme='light'] {
   color-scheme: light;
   --bg: #f6f8ff;
+  --pageBg:
+    radial-gradient(1200px 700px at 30% -20%, rgba(11, 118, 255, 0.12), transparent 62%),
+    radial-gradient(900px 700px at 100% 0%, rgba(15, 157, 88, 0.10), transparent 58%),
+    var(--bg);
   --panel: rgba(10, 20, 40, 0.07);
   --panel-2: rgba(10, 20, 40, 0.10);
   --text: rgba(10, 20, 40, 0.92);
@@ -50,18 +58,8 @@ body {
 
 body {
   margin: 0;
-  background:
-    radial-gradient(1200px 700px at 30% -20%, rgba(116, 199, 255, 0.25), transparent 60%),
-    radial-gradient(900px 700px at 100% 0%, rgba(69, 212, 131, 0.12), transparent 55%),
-    var(--bg);
+  background: var(--pageBg);
   color: var(--text);
-}
-
-:root[data-theme='light'] body {
-  background:
-    radial-gradient(1200px 700px at 30% -20%, rgba(11, 118, 255, 0.12), transparent 62%),
-    radial-gradient(900px 700px at 100% 0%, rgba(15, 157, 88, 0.10), transparent 58%),
-    var(--bg);
 }
 
 a {
@@ -136,4 +134,48 @@ pre {
   .grid2 {
     grid-template-columns: 1fr;
   }
+}
+
+/* Dev tools fullscreen */
+.toolPanelFullscreen {
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+  height: 100%;
+  background: var(--pageBg);
+  border: 0;
+  border-radius: 0;
+  backdrop-filter: none;
+}
+
+.toolPanelFullscreen .panelBody {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+/* Default: keep existing stacked layout */
+.toolSplit {
+  display: block;
+}
+
+.toolPanelFullscreen .toolSplit {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: var(--gap);
+  align-items: stretch;
+}
+
+.toolPanelFullscreen .toolArea {
+  min-height: 65vh;
+  height: 100%;
+  resize: none;
+}
+
+/* Fullscreen surfaces should match theme background (e.g. Diagrams canvas) */
+.diagramCanvasFullscreen {
+  background: var(--pageBg) !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  backdrop-filter: none !important;
 }

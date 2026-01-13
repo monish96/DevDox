@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useRef, useState } from 'react'
 import { useLocation } from 'react-router-dom'
+import { IconButton } from '../components/IconButton'
+import { IconCollapse, IconExpand } from '../components/icons'
 import { copyToClipboard } from '../lib/clipboard'
 
 export function ToolsPage() {
@@ -22,6 +24,73 @@ export function ToolsPage() {
         <UrlTool />
         <Sha256Tool />
       </div>
+    </div>
+  )
+}
+
+function ToolPanel(props: { id: string; title: string; pill?: string; children: ReactNode }) {
+  const fullscreenRef = useRef<HTMLDivElement | null>(null)
+  const [isFullscreen, setIsFullscreen] = useState(false)
+
+  function syncFullscreenState() {
+    const el = fullscreenRef.current
+    if (!el) {
+      setIsFullscreen(false)
+      return
+    }
+    const d: any = document as any
+    const fsEl = document.fullscreenElement ?? d.webkitFullscreenElement ?? null
+    setIsFullscreen(fsEl === el)
+  }
+
+  async function toggleFullscreen() {
+    const el = fullscreenRef.current as any
+    if (!el) return
+    const d: any = document as any
+    const fsEl = document.fullscreenElement ?? d.webkitFullscreenElement ?? null
+    try {
+      if (fsEl) {
+        if (document.exitFullscreen) await document.exitFullscreen()
+        else if (d.webkitExitFullscreen) d.webkitExitFullscreen()
+        return
+      }
+      if (el.requestFullscreen) await el.requestFullscreen()
+      else if (el.webkitRequestFullscreen) el.webkitRequestFullscreen()
+    } catch {
+      // ignore (permission/gesture restrictions)
+    } finally {
+      syncFullscreenState()
+    }
+  }
+
+  useEffect(() => {
+    syncFullscreenState()
+    const onChange = () => syncFullscreenState()
+    document.addEventListener('fullscreenchange', onChange)
+    // Safari
+    document.addEventListener('webkitfullscreenchange' as any, onChange)
+    return () => {
+      document.removeEventListener('fullscreenchange', onChange)
+      document.removeEventListener('webkitfullscreenchange' as any, onChange)
+    }
+  }, [])
+
+  return (
+    <div
+      className={`panel toolPanel ${isFullscreen ? 'toolPanelFullscreen' : ''}`.trim()}
+      id={props.id}
+      ref={fullscreenRef}
+    >
+      <div className="panelHeader">
+        <div style={{ fontWeight: 650 }}>{props.title}</div>
+        <div className="row" style={{ gap: 8 }}>
+          {props.pill ? <span className="pill">{props.pill}</span> : null}
+          <IconButton label={isFullscreen ? 'Exit fullscreen' : 'Fullscreen'} onClick={toggleFullscreen}>
+            {isFullscreen ? <IconCollapse /> : <IconExpand />}
+          </IconButton>
+        </div>
+      </div>
+      <div className="panelBody col toolPanelBody">{props.children}</div>
     </div>
   )
 }
@@ -55,28 +124,26 @@ function Base64Tool() {
   }
 
   return (
-    <div className="panel" id="base64">
-      <div className="panelHeader">
-        <div style={{ fontWeight: 650 }}>Base64</div>
-        <span className="pill">encode/decode</span>
-      </div>
-      <div className="panelBody col">
-        {msg ? <div className="pill pillWarn">{msg}</div> : null}
-        <textarea className="textarea" placeholder="Plain text" value={plain} onChange={(e) => setPlain(e.target.value)} />
-        <div className="row" style={{ flexWrap: 'wrap' }}>
-          <button className="btn btnPrimary" type="button" onClick={encode}>
-            Encode →
-          </button>
-          <button className="btn" type="button" onClick={decode}>
-            ← Decode
-          </button>
-          <button className="btn" type="button" onClick={() => { setPlain(''); setB64(''); setMsg(null) }}>
-            Clear
-          </button>
+    <ToolPanel id="base64" title="Base64" pill="encode/decode">
+      {msg ? <div className="pill pillWarn">{msg}</div> : null}
+      <div className="toolSplit">
+        <div className="col" style={{ minWidth: 0 }}>
+          <textarea className="textarea toolArea" placeholder="Plain text" value={plain} onChange={(e) => setPlain(e.target.value)} />
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <button className="btn btnPrimary" type="button" onClick={encode}>
+              Encode →
+            </button>
+            <button className="btn" type="button" onClick={decode}>
+              ← Decode
+            </button>
+            <button className="btn" type="button" onClick={() => { setPlain(''); setB64(''); setMsg(null) }}>
+              Clear
+            </button>
+          </div>
         </div>
-        <textarea className="textarea" placeholder="Base64" value={b64} onChange={(e) => setB64(e.target.value)} />
+        <textarea className="textarea toolArea" placeholder="Base64" value={b64} onChange={(e) => setB64(e.target.value)} />
       </div>
-    </div>
+    </ToolPanel>
   )
 }
 
@@ -106,28 +173,24 @@ function JsonTool() {
   }
 
   return (
-    <div className="panel" id="json">
-      <div className="panelHeader">
-        <div style={{ fontWeight: 650 }}>JSON</div>
-        <span className="pill">format/minify</span>
+    <ToolPanel id="json" title="JSON" pill="format/minify">
+      {error ? <div className="pill pillBad">{error}</div> : null}
+      <div className="row" style={{ flexWrap: 'wrap' }}>
+        <button className="btn btnPrimary" type="button" onClick={format}>
+          Format
+        </button>
+        <button className="btn" type="button" onClick={minify}>
+          Minify
+        </button>
+        <button className="btn" type="button" onClick={() => { setInput(''); setOutput(''); setError(null) }}>
+          Clear
+        </button>
       </div>
-      <div className="panelBody col">
-        {error ? <div className="pill pillBad">{error}</div> : null}
-        <textarea className="textarea" placeholder='{"hello":"world"}' value={input} onChange={(e) => setInput(e.target.value)} />
-        <div className="row" style={{ flexWrap: 'wrap' }}>
-          <button className="btn btnPrimary" type="button" onClick={format}>
-            Format
-          </button>
-          <button className="btn" type="button" onClick={minify}>
-            Minify
-          </button>
-          <button className="btn" type="button" onClick={() => { setInput(''); setOutput(''); setError(null) }}>
-            Clear
-          </button>
-        </div>
-        <textarea className="textarea" placeholder="Output" value={output} onChange={(e) => setOutput(e.target.value)} />
+      <div className="toolSplit">
+        <textarea className="textarea toolArea" placeholder='{"hello":"world"}' value={input} onChange={(e) => setInput(e.target.value)} />
+        <textarea className="textarea toolArea" placeholder="Output" value={output} onChange={(e) => setOutput(e.target.value)} />
       </div>
-    </div>
+    </ToolPanel>
   )
 }
 
@@ -142,23 +205,17 @@ function UuidTool() {
   }
 
   return (
-    <div className="panel" id="uuid">
-      <div className="panelHeader">
-        <div style={{ fontWeight: 650 }}>UUID</div>
-        <span className="pill">v4</span>
+    <ToolPanel id="uuid" title="UUID" pill="v4">
+      <input className="input" value={uuid} readOnly />
+      <div className="row" style={{ flexWrap: 'wrap' }}>
+        <button className="btn btnPrimary" type="button" onClick={() => setUuid(safeUuid())}>
+          Generate
+        </button>
+        <button className="btn" type="button" onClick={copy}>
+          {copied ? 'Copied' : 'Copy'}
+        </button>
       </div>
-      <div className="panelBody col">
-        <input className="input" value={uuid} readOnly />
-        <div className="row" style={{ flexWrap: 'wrap' }}>
-          <button className="btn btnPrimary" type="button" onClick={() => setUuid(safeUuid())}>
-            Generate
-          </button>
-          <button className="btn" type="button" onClick={copy}>
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-        </div>
-      </div>
-    </div>
+    </ToolPanel>
   )
 }
 
@@ -167,27 +224,23 @@ function UrlTool() {
   const [out, setOut] = useState('')
 
   return (
-    <div className="panel" id="url">
-      <div className="panelHeader">
-        <div style={{ fontWeight: 650 }}>URL</div>
-        <span className="pill">encode/decode</span>
+    <ToolPanel id="url" title="URL" pill="encode/decode">
+      <div className="row" style={{ flexWrap: 'wrap' }}>
+        <button className="btn btnPrimary" type="button" onClick={() => setOut(encodeURIComponent(text))}>
+          Encode
+        </button>
+        <button className="btn" type="button" onClick={() => setOut(safeDecodeURIComponent(text))}>
+          Decode
+        </button>
+        <button className="btn" type="button" onClick={() => { setText(''); setOut('') }}>
+          Clear
+        </button>
       </div>
-      <div className="panelBody col">
-        <textarea className="textarea" placeholder="Text / URL" value={text} onChange={(e) => setText(e.target.value)} />
-        <div className="row" style={{ flexWrap: 'wrap' }}>
-          <button className="btn btnPrimary" type="button" onClick={() => setOut(encodeURIComponent(text))}>
-            Encode
-          </button>
-          <button className="btn" type="button" onClick={() => setOut(safeDecodeURIComponent(text))}>
-            Decode
-          </button>
-          <button className="btn" type="button" onClick={() => { setText(''); setOut('') }}>
-            Clear
-          </button>
-        </div>
-        <textarea className="textarea" placeholder="Output" value={out} onChange={(e) => setOut(e.target.value)} />
+      <div className="toolSplit">
+        <textarea className="textarea toolArea" placeholder="Text / URL" value={text} onChange={(e) => setText(e.target.value)} />
+        <textarea className="textarea toolArea" placeholder="Output" value={out} onChange={(e) => setOut(e.target.value)} />
       </div>
-    </div>
+    </ToolPanel>
   )
 }
 
@@ -215,27 +268,28 @@ function Sha256Tool() {
   }
 
   return (
-    <div className="panel" id="sha256">
-      <div className="panelHeader">
-        <div style={{ fontWeight: 650 }}>SHA-256</div>
-        <span className="pill">{canCrypto ? 'webcrypto' : 'unsupported'}</span>
-      </div>
-      <div className="panelBody col">
-        <textarea className="textarea" placeholder="Text" value={text} onChange={(e) => setText(e.target.value)} />
-        <div className="row" style={{ flexWrap: 'wrap' }}>
-          <button className="btn btnPrimary" type="button" onClick={compute} disabled={!canCrypto}>
-            Hash
-          </button>
-          <button className="btn" type="button" onClick={copy} disabled={!hash}>
-            {copied ? 'Copied' : 'Copy'}
-          </button>
-          <button className="btn" type="button" onClick={() => { setText(''); setHash(''); }}>
-            Clear
-          </button>
+    <ToolPanel id="sha256" title="SHA-256" pill={canCrypto ? 'webcrypto' : 'unsupported'}>
+      <div className="toolSplit">
+        <div className="col" style={{ minWidth: 0 }}>
+          <textarea className="textarea toolArea" placeholder="Text" value={text} onChange={(e) => setText(e.target.value)} />
+          <div className="row" style={{ flexWrap: 'wrap' }}>
+            <button className="btn btnPrimary" type="button" onClick={compute} disabled={!canCrypto}>
+              Hash
+            </button>
+            <button className="btn" type="button" onClick={copy} disabled={!hash}>
+              {copied ? 'Copied' : 'Copy'}
+            </button>
+            <button className="btn" type="button" onClick={() => { setText(''); setHash(''); }}>
+              Clear
+            </button>
+          </div>
         </div>
-        <input className="input" value={hash} readOnly placeholder="hash output" />
+        <div className="col" style={{ minWidth: 0 }}>
+          <div className="muted" style={{ fontSize: 12 }}>Hash output</div>
+          <input className="input" value={hash} readOnly placeholder="sha-256…" />
+        </div>
       </div>
-    </div>
+    </ToolPanel>
   )
 }
 

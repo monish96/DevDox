@@ -314,12 +314,11 @@ export function DiagramsPage() {
                       }}
                       placeholder="Diagram title"
                     />
-                    <div className="panel" style={{ background: 'rgba(255,255,255,0.04)', overflow: 'hidden' }}>
+                    <div className="panel" style={{ overflow: 'hidden' }}>
                       <div
                         ref={fullscreenRef}
-                        className="panel"
+                        className={`panel ${isFullscreen ? 'diagramCanvasFullscreen' : ''}`.trim()}
                         style={{
-                          background: 'rgba(255,255,255,0.04)',
                           overflow: 'hidden',
                           display: 'flex',
                           flexDirection: 'column',
